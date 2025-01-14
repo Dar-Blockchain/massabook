@@ -1,58 +1,81 @@
-import { bytesToStr, JsonRPCClient } from "@massalabs/massa-web3";
-import { useEffect, useState } from "react";
-import { MassaLogo } from "@massalabs/react-ui-kit";
-import './App.css';
+import "./App.css";
+import { useMemo, useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { createTheme } from "@mui/material/styles";
+import {
+  Backdrop,
+  CircularProgress,
+  CssBaseline,
+  ThemeProvider,
+} from "@mui/material";
+import { themeSettings } from "./theme";
+import { AppDispatch, RootState } from "./redux/store";
+import { Route, Routes } from "react-router-dom";
+import HomePage from "./components/homePage";
+import ProfilePage from "./components/profilePage";
+import { checkUserProfile } from "./redux/slices/userSlice";
+import ProfileSetupPage from "./components/ProfileSetupPage";
+// import { useNavigate } from "react-router-dom";
+import LandingPage from "./components/LandingPage";
+import { useNavigate } from "react-router-dom";
+import CreatePage from "./components/createPagePage";
+import LearnMorePage from "./components/LearnMorePage";
 
-const sc_addr = "AS121byc9dBwjbeREk4rzUZisFyfMkdZ1Uhtcnm6n6s5hnCX6fsHc"; // TODO Update with your deployed contract address
-
-/**
- * The key used to store the greeting in the smart contract
- */
-const GREETING_KEY = "greeting_key";
-
-/**
- * App component that handles interactions with a Massa smart contract
- * @returns The rendered component
- */
 function App() {
+  const mode = useSelector((state: RootState) => state.user.mode);
+  const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
+  const dispatch = useDispatch<AppDispatch>();
+  const { currentWallet, connectedAccount } = useSelector(
+    (state: RootState) => state.account
+  );
+  // const user = useSelector((state: RootState) => state.user.user);
+  const [isCheckingProfile, setIsCheckingProfile] = useState(false);
+  const navigate = useNavigate();
 
-  const [greeting, setGreeting] = useState<string | null>(null);
-
-    /**
-   * Initialize the web3 client
-   */
-  const client = JsonRPCClient.buildnet()
-
-  /**
-   * Fetch the greeting when the web3 client is initialized
-   */
   useEffect(() => {
-    getGreeting();
-  });
-
-  /**
-   * Function to get the current greeting from the smart contract
-   */
-  async function getGreeting() {
-    if (client) {
-      const dataStoreVal = await client.getDatastoreEntry(GREETING_KEY, sc_addr, false)
-      const greetingDecoded = bytesToStr(dataStoreVal);
-      setGreeting(greetingDecoded);
-    }
-  }
+    console.log("currentWallet&&&&", currentWallet);
+    console.log("connectedAccount&&&&&", connectedAccount);
+    const checkProfile = async () => {
+      if (currentWallet && connectedAccount?.address) {
+        setIsCheckingProfile(true);
+        await dispatch(checkUserProfile());
+        setIsCheckingProfile(false);
+        navigate("/home");
+      }
+    };
+    checkProfile();
+  }, [currentWallet, connectedAccount, dispatch]);
 
   return (
     <>
-    <div>
-     <MassaLogo className="logo" size={100}/>   
-     <h2>Greeting message:</h2>
-     <h1>{greeting}</h1>
-     </div>
+      <div className="App">
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          {/* <ConnectWalletModal /> */}
+          <Backdrop
+            sx={{
+              color: "#fff",
+              zIndex: (theme) => theme.zIndex.drawer + 9999,
+            }}
+            open={isCheckingProfile}
+          >
+            <CircularProgress color="inherit" />
+          </Backdrop>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/learn-more" element={<LearnMorePage />} />
+
+            <Route path="/profile-setup" element={<ProfileSetupPage />} />
+
+            <Route path="/home" element={<HomePage />} />
+
+            <Route path="/profile/:userId" element={<ProfilePage />} />
+            <Route path="/create-page" element={<CreatePage />} />
+          </Routes>
+        </ThemeProvider>
+      </div>
     </>
   );
 }
 
 export default App;
-
-
-
