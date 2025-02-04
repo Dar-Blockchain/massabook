@@ -6,6 +6,7 @@ import {
   DeserializedResult,
   Serializable,
   OperationStatus,
+  Mas,
 } from "@massalabs/massa-web3";
 
 export class Profile implements Serializable<Profile> {
@@ -67,7 +68,8 @@ export const checkUserProfile = createAsyncThunk<
 
   try {
     const contractAddress =
-      "AS1kkJfWrauwFoXYj62WXhhJ9HPVyqHPmTf4ZHGxEscWtdtVsk1Y";
+      import.meta.env.VITE_CONTRACT_ADDRESS ||
+      "AS1RcLEVYx3K7NVNpfDQhuzEFmpYEhzu8jpLm5YoWCegBEG8hSsc";
     const args = new Args().addString(connectedAccount.address);
     // const contract = new SmartContract(provider, contractAddress);
     const contract = new SmartContract(connectedAccount, contractAddress);
@@ -116,7 +118,8 @@ export const updateUserProfile = createAsyncThunk<
 
   try {
     const contractAddress =
-      "AS1kkJfWrauwFoXYj62WXhhJ9HPVyqHPmTf4ZHGxEscWtdtVsk1Y";
+      import.meta.env.VITE_CONTRACT_ADDRESS ||
+      "AS1RcLEVYx3K7NVNpfDQhuzEFmpYEhzu8jpLm5YoWCegBEG8hSsc";
     const contract = new SmartContract(connectedAccount, contractAddress);
 
     const newProfile = new Profile(
@@ -127,7 +130,9 @@ export const updateUserProfile = createAsyncThunk<
     );
     const args = new Args().addSerializable(newProfile).serialize();
 
-    const operation = await contract.call("updateProfile", args);
+    const operation = await contract.call("updateProfile", args, {
+      coins: Mas.fromString("3"),
+    });
 
     const operationStatus = await operation.waitFinalExecution();
     if (operationStatus === OperationStatus.Success) {
