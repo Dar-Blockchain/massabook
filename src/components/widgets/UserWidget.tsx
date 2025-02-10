@@ -6,6 +6,8 @@ import {
   Telegram,
   X,
   AddCircleOutline,
+  Biotech,
+  InfoOutlined,
 } from "@mui/icons-material";
 import {
   Box,
@@ -47,32 +49,12 @@ const UserWidget = ({ userId, picturePath }: UserWidgetProps) => {
     friends: [],
   };
 
-  // const getUser = async () => {
-  //   const response = await fetch(`http://localhost:3001/users/${userId}`, {
-  //     method: "GET",
-  //     headers: { Authorization: `Bearer ${token}` },
-  //   });
-  //   const data = await response.json();
-  //   setUser(data);
-  // };
-
-  // useEffect(() => {
-  //   getUser();
-  // }, []);
-
   if (!userMock) {
     return null;
   }
 
-  const {
-    firstName,
-    lastName,
-    location,
-    occupation,
-    viewedProfile,
-    impressions,
-    friends,
-  } = userMock;
+  const { location, occupation, viewedProfile, impressions, friends } =
+    userMock;
 
   return (
     <WidgetWrapper>
@@ -92,13 +74,13 @@ const UserWidget = ({ userId, picturePath }: UserWidgetProps) => {
                 },
               }}
             >
-              {user?.name}
+              {user?.firstName} {user?.lastName}
             </Typography>
             <Typography color={medium}>{friends.length} friends</Typography>
           </Box>
         </FlexBetween>
         <IconButton
-          onClick={() => navigate(`/profile-setup`)}
+          onClick={() => navigate(`/update-profile`)}
           sx={{ cursor: "pointer" }}
         >
           <ManageAccountsOutlined />
@@ -110,12 +92,14 @@ const UserWidget = ({ userId, picturePath }: UserWidgetProps) => {
       {/* SECOND ROW */}
       <Box p="1rem 0">
         <Box display="flex" alignItems="center" gap="1rem" mb="0.5rem">
-          <LocationOnOutlined fontSize="large" sx={{ color: main }} />
-          <Typography color={medium}>{location}</Typography>
+          <LocationOnOutlined fontSize="medium" sx={{ color: main }} />
+          <Typography color={medium}>
+            {user?.city}, {user?.country || "No location"}
+          </Typography>
         </Box>
         <Box display="flex" alignItems="center" gap="1rem">
-          <WorkOutlineOutlined fontSize="large" sx={{ color: main }} />
-          <Typography color={medium}>{occupation}</Typography>
+          <InfoOutlined fontSize="medium" sx={{ color: main }} />
+          <Typography color={medium}>{user?.bio}</Typography>
         </Box>
       </Box>
 
@@ -159,10 +143,17 @@ const UserWidget = ({ userId, picturePath }: UserWidgetProps) => {
               <Typography color={main} fontWeight="500" textAlign="left">
                 X
               </Typography>
-              <Typography color={medium}>Social Network</Typography>
+              <Typography color={medium}>
+                {user?.xHandle || "No X account"}
+              </Typography>
             </Box>
           </FlexBetween>
-          <EditOutlined sx={{ color: main }} />
+          <IconButton
+            onClick={() => navigate(`/update-profile`)}
+            sx={{ cursor: "pointer" }}
+          >
+            <EditOutlined sx={{ color: main }} />
+          </IconButton>
         </FlexBetween>
 
         <FlexBetween gap="1rem">
@@ -173,10 +164,18 @@ const UserWidget = ({ userId, picturePath }: UserWidgetProps) => {
               <Typography color={main} fontWeight="500" textAlign="left">
                 Telegram
               </Typography>
-              <Typography color={medium}>Network Platform</Typography>
+              <Typography color={medium}>
+                {" "}
+                {user?.telegram || "No Telegram account"}{" "}
+              </Typography>
             </Box>
           </FlexBetween>
-          <EditOutlined sx={{ color: main }} />
+          <IconButton
+            onClick={() => navigate(`/update-profile`)}
+            sx={{ cursor: "pointer" }}
+          >
+            <EditOutlined sx={{ color: main }} />
+          </IconButton>
         </FlexBetween>
       </Box>
       <Divider />

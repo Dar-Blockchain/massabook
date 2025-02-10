@@ -9,12 +9,14 @@ import {
   CircularProgress,
   Grid,
   useTheme,
-  Chip,
-  FormHelperText,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { createUserAccount, Profile } from "../../redux/slices/userSlice";
+import {
+  createUserAccount,
+  Profile,
+  updateProfile,
+} from "../../redux/slices/userSlice";
 import { AppDispatch, RootState } from "../../redux/store";
 import { toast } from "react-toastify";
 import { useDropzone } from "react-dropzone";
@@ -22,9 +24,10 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../navbar";
 import WidgetWrapper from "../WidgetWrapper";
 
-const ProfileSetupPage = () => {
+const UpdateProfilePage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { connectedAccount } = useSelector((state: RootState) => state.account);
+  const { user } = useSelector((state: RootState) => state.user);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [bio, setBio] = useState("");
@@ -34,51 +37,20 @@ const ProfileSetupPage = () => {
   const [xHandle, setXHandle] = useState("");
   const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const { palette } = useTheme();
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [topicsError, setTopicsError] = useState("");
 
-  const suggestedTopics = [
-    "Blockchain Fundamentals",
-    "Smart Contracts",
-    "DeFi",
-    "NFTs",
-    "Web3 Development",
-    "Crypto Investing",
-    "DAOs",
-    "Metaverse",
-    "AI & Blockchain",
-    "Cybersecurity",
-    "Decentralized Storage",
-    "Tokenomics",
-    "DApp Development",
-    "Web3 Gaming",
-    "Regulatory Compliance",
-  ];
-
-  const handleTopicClick = (topic: string) => {
-    const isSelected = selectedTopics.includes(topic);
-    let newTopics: string[];
-
-    if (isSelected) {
-      newTopics = selectedTopics.filter((t) => t !== topic);
-    } else {
-      if (selectedTopics.length >= 5) return;
-      newTopics = [...selectedTopics, topic];
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.firstName);
+      setLastName(user.lastName);
+      setBio(user.bio);
+      setCountry(user.country);
+      setCity(user.city);
+      setTelegram(user.telegram);
+      setXHandle(user.xHandle);
+      setAvatarBase64(user.avatar);
     }
-
-    setSelectedTopics(newTopics);
-
-    // Validation
-    if (newTopics.length < 3) {
-      setTopicsError(
-        `Select at least 3 topics (${3 - newTopics.length} more needed)`
-      );
-    } else {
-      setTopicsError("");
-    }
-  };
+  }, [user]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -135,7 +107,7 @@ const ProfileSetupPage = () => {
     setLoading(true);
 
     try {
-      await toast.promise(dispatch(createUserAccount(profileData)).unwrap(), {
+      await toast.promise(dispatch(updateProfile(profileData)).unwrap(), {
         pending: "Saving profile...",
         success: "Profile saved successfully!",
         error: "Failed to save profile.",
@@ -189,7 +161,7 @@ const ProfileSetupPage = () => {
               mb="1.5rem"
               textAlign="center"
             >
-              Set Up Your Profile
+              Update Profile
             </Typography>
             <form onSubmit={handleSubmit}>
               <Grid container spacing={3}>
@@ -335,61 +307,6 @@ const ProfileSetupPage = () => {
                   />
                 </Grid>
               </Grid>
-              <Grid item xs={12}>
-                <Box mt={2}>
-                  <Typography variant="body1" fontWeight="500" mb={1}>
-                    Select Interests (3-5 topics)
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: 1,
-                      border: `1px solid ${palette.neutral.medium}`,
-                      borderRadius: "8px",
-                      p: 1.5,
-                      backgroundColor: palette.background.paper,
-                    }}
-                  >
-                    {suggestedTopics.map((topic) => {
-                      const isSelected = selectedTopics.includes(topic);
-                      const isDisabled =
-                        !isSelected && selectedTopics.length >= 5;
-
-                      return (
-                        <Chip
-                          key={topic}
-                          label={topic}
-                          onClick={() => handleTopicClick(topic)}
-                          variant={isSelected ? "filled" : "outlined"}
-                          color={isSelected ? "primary" : "default"}
-                          disabled={isDisabled}
-                          sx={{
-                            borderRadius: "4px",
-                            transition: "all 0.2s ease",
-                            "&:hover": {
-                              transform: "scale(1.05)",
-                              backgroundColor: isSelected
-                                ? palette.primary.light
-                                : palette.background.default,
-                            },
-                          }}
-                        />
-                      );
-                    })}
-                  </Box>
-                  <Box display="flex" justifyContent="space-between" mt={1}>
-                    <FormHelperText error={!!topicsError}>
-                      {topicsError || `${selectedTopics.length}/5 selected`}
-                    </FormHelperText>
-                    <Typography variant="caption" color="textSecondary">
-                      {selectedTopics.length < 3
-                        ? "Minimum 3 required"
-                        : "Maximum 5 allowed"}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
               <Box display="flex" justifyContent="center" mt={3}>
                 <Button
                   type="submit"
@@ -403,7 +320,7 @@ const ProfileSetupPage = () => {
                   }}
                   disabled={loading}
                 >
-                  Create Account
+                  Update Profile
                 </Button>
               </Box>
             </form>
@@ -414,4 +331,4 @@ const ProfileSetupPage = () => {
   );
 };
 
-export default ProfileSetupPage;
+export default UpdateProfilePage;

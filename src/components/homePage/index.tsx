@@ -15,36 +15,36 @@ const HomePage = () => {
   const isNonMobileScreens = useMediaQuery("(min-width:1000px)");
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.user.user);
-  const { currentWallet, connectedAccount } = useSelector(
-    (state: RootState) => state.account
-  );
+  // const { currentWallet, connectedAccount } = useSelector(
+  //   (state: RootState) => state.account
+  // );
   const dispatch = useDispatch<AppDispatch>();
   const [isCheckingProfile, setIsCheckingProfile] = useState(false);
-  useEffect(() => {
-    const verifyUserProfile = async () => {
-      if (currentWallet && connectedAccount) {
-        const profile = await dispatch(checkUserProfile()).unwrap();
+  // useEffect(() => {
+  //   const verifyUserProfile = async () => {
+  //     if (currentWallet && connectedAccount) {
+  //       const profile = await dispatch(checkUserProfile()).unwrap();
 
-        if (profile === null) {
-          console.log(
-            "First-time login detected, redirecting to /profile-setup"
-          );
-          navigate("/profile-setup");
-        }
-      }
-      setIsCheckingProfile(false);
-    };
+  //       if (profile === null) {
+  //         console.log(
+  //           "First-time login detected, redirecting to /profile-setup"
+  //         );
+  //         navigate("/profile-setup");
+  //       }
+  //     }
+  //     setIsCheckingProfile(false);
+  //   };
 
-    verifyUserProfile();
-  }, [currentWallet, connectedAccount, dispatch, navigate]);
+  //   verifyUserProfile();
+  // }, [currentWallet, connectedAccount, dispatch, navigate]);
 
-  useEffect(() => {
-    if (user == null) {
-      console.log("User is null, redirecting to /");
-      navigate("/");
-    }
-    console.log("user", user);
-  }, [user, navigate]);
+  // useEffect(() => {
+  //   if (user == null) {
+  //     console.log("User is null, redirecting to /");
+  //     navigate("/");
+  //   }
+  //   console.log("user", user);
+  // }, [user, navigate]);
 
   return (
     <Box>
