@@ -13,14 +13,14 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  createUserAccount,
+  // createUserAccount,
   Profile,
   updateProfile,
 } from "../../redux/slices/userSlice";
 import { AppDispatch, RootState } from "../../redux/store";
 import { toast } from "react-toastify";
 import { useDropzone } from "react-dropzone";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import Navbar from "../navbar";
 import WidgetWrapper from "../WidgetWrapper";
 

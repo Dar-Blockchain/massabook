@@ -57,21 +57,61 @@ export class Profile implements Serializable<Profile> {
   }
 }
 
+export class Post implements Serializable<Post> {
+  constructor(
+    public id: bigint = 0n,
+    public author: string = "",
+    public text: string = "",
+    public image: string = "",
+    public isRepost: boolean = false,
+    public repostedPostId: bigint = 0n,
+    public createdAt: bigint = 0n
+  ) {}
+
+  serialize(): Uint8Array {
+    return new Args()
+      .addU64(this.id)
+      .addString(this.author) // Serialize the author's profile
+      .addString(this.text)
+      .addString(this.image)
+      .addBool(this.isRepost)
+      .addU64(this.repostedPostId)
+      .addU64(this.createdAt)
+      .serialize();
+  }
+
+  deserialize(data: Uint8Array, offset: number): DeserializedResult<Post> {
+    const args = new Args(data, offset);
+    this.id = args.nextU64();
+    this.author = args.nextString();
+    this.text = args.nextString();
+    this.image = args.nextString();
+    this.isRepost = args.nextBool();
+    this.repostedPostId = args.nextU64();
+    this.createdAt = args.nextU64();
+
+    return { instance: this, offset: args.getOffset() };
+  }
+}
+
 // export interface ProfileType {
 //   address: string;
 //   name: string;
 //   avatar: string;
 //   bio: string;
 // }
+
 interface UserState {
   mode: "light" | "dark";
   user: Profile | null;
+  posts: Post[];
   userContractAddress: string | undefined;
 }
 
 const initialState: UserState = {
   mode: "light",
   user: null,
+  posts: [],
   userContractAddress: undefined,
 };
 
@@ -182,12 +222,13 @@ export const createUserAccount = createAsyncThunk<
     // Use the factory contract address (set this in your .env file)
     const factoryAddress =
       import.meta.env.VITE_FACTORY_ADDRESS ||
-      "AS1eK1Xd8gGzsrMWHLghkpZabs7XwkB5PoxkENzBbi1iJSoa3VZy";
+      "AS12EyXkBNw1eFmEfS7QQBfZfbdCTq2kRQN1PUe3HREJb3ZF5YocV";
     const contract = new SmartContract(connectedAccount, factoryAddress);
 
     // Use the provided template address for the user contract
     const templateAddress =
-      "AS12SHo1uVJgE8WctUBuZkbeiz84FMALvHnVXV2yvHxsDj2Gf3jjr";
+      import.meta.env.VITE_TEMPLATE_ADDRESS ||
+      "AS1sc86XeQysdTeF3JbqJoyLsbW1ndEzvCfXJ162vXGpBmUG7WVy";
 
     // Build the arguments for createAccount:
     // [templateAddress, firstName, lastName, bio, photo, country, city, telegram, xHandle]
@@ -202,6 +243,7 @@ export const createUserAccount = createAsyncThunk<
       .addString(profileData.city)
       .addString(profileData.telegram)
       .addString(profileData.xHandle)
+      .addU64(parseMas("3")) // here the cost for the profie
       .serialize();
 
     const profileKeys = [
@@ -216,7 +258,7 @@ export const createUserAccount = createAsyncThunk<
     ];
     const storageCost = await calculateStorageCost(profileData, profileKeys);
     console.log("Calculated storage cost:", storageCost);
-    const coinsToSend = parseMas(String(storageCost + 7));
+    const coinsToSend = parseMas(String(storageCost + 7)); // here the cost for the profie and wasm file to deploy
 
     const operation = await contract.call("createAccount", args, {
       coins: coinsToSend,
@@ -250,7 +292,7 @@ export const getUserContract = createAsyncThunk<
     // Use your factory contract address from your environment variables.
     const factoryAddress =
       import.meta.env.VITE_FACTORY_ADDRESS ||
-      "AS127thiEuVbfTgKhqR47Z9VKsXubDu6cXZgrXrjrYu9UCE5XQwbn";
+      "AS12EyXkBNw1eFmEfS7QQBfZfbdCTq2kRQN1PUe3HREJb3ZF5YocV";
     const contract = new SmartContract(connectedAccount, factoryAddress);
 
     // Build arguments for getUserContract: just the userId.
@@ -372,6 +414,62 @@ export const updateProfile = createAsyncThunk<
   }
 });
 
+export const createUserPost = createAsyncThunk<
+  void,
+  { text: string; image: string },
+  { state: RootState }
+>("user/createPost", async ({ text, image }, { getState }) => {
+  const state = getState();
+  const { connectedAccount } = state.account;
+  const { userContractAddress } = state.user;
+
+  if (!connectedAccount || !userContractAddress) {
+    throw new Error("Not connected to wallet or no contract address");
+  }
+
+  const contract = new SmartContract(connectedAccount, userContractAddress);
+  const args = new Args().addString(text).addString(image).serialize();
+
+  const operation = await contract.call("createPost", args, {
+    coins: Mas.fromString("20"),
+  });
+
+  const operationStatus = await operation.waitSpeculativeExecution();
+  const speculativeEvents = await operation.getSpeculativeEvents();
+  if (operationStatus === OperationStatus.SpeculativeSuccess) {
+    console.log("User post created successfully");
+  } else {
+    console.error("Failed to create post:", speculativeEvents);
+    throw new Error("Failed to create post");
+  }
+});
+
+export const fetchUserPosts = createAsyncThunk<
+  Post[],
+  string,
+  { state: RootState }
+>("user/fetchPosts", async (userId, { getState }) => {
+  const state = getState();
+  const { connectedAccount } = state.account;
+  const { userContractAddress } = state.user;
+
+  if (!connectedAccount || !userContractAddress) {
+    throw new Error("Not connected to wallet or no contract address");
+  }
+
+  const contract = new SmartContract(connectedAccount, userContractAddress);
+  const args = new Args().addString(userId).serialize();
+
+  const result = await contract.read("getUserPosts", args);
+  if (result.info.error) {
+    throw new Error(result.info.error);
+  }
+
+  const posts = new Args(result.value).nextSerializableObjectArray<Post>(Post);
+  console.log("post array from getUserPosts", posts);
+  return posts;
+});
+
 const userSlice = createSlice({
   name: "user",
   initialState,
@@ -409,6 +507,11 @@ const userSlice = createSlice({
     });
     builder.addCase(updateProfile.fulfilled, (state, action) => {
       state.user = action.payload;
+    });
+
+    builder.addCase(fetchUserPosts.fulfilled, (state, action) => {
+      state.posts = action.payload;
+      // state.loadingPosts = false;
     });
   },
 });

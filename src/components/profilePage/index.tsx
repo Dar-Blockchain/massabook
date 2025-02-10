@@ -1,32 +1,26 @@
 import { Box, useMediaQuery } from "@mui/material";
-// import { useEffect, useState } from "react";
-// import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import Navbar from "../navbar";
 import UserWidget from "../widgets/UserWidget";
 import FriendListWidget from "../widgets/FriendListWidget";
 import MyPostWidget from "../widgets/MyPostWidget";
 import PostsWidget from "../widgets/PostsWidget";
-import { useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "../../redux/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../redux/store";
+import { useEffect } from "react";
+import { fetchUserPosts } from "../../redux/slices/userSlice";
 
 const ProfilePage = () => {
-  // const [user, setUser] = useState(null);
   const user = useSelector((state: RootState) => state.user.user);
   const { userId } = useParams();
   const isNonMobileScreens = useMediaQuery("(min-width:1000px)");
-
-  // const user = {
-  //   firstName: "Farouk",
-  //   lastName: "Allani",
-  //   location: "Tunis, Tunisia",
-  //   occupation: "Software Engineer",
-  //   picturePath: "https://randomuser.me/api/portraits",
-  //   viewedProfile: 100,
-  //   impressions: 1000,
-  //   friends: [],
-  // };
+  const dispatch = useDispatch<AppDispatch>();
+  const { posts } = useSelector((state: RootState) => state.user);
+  useEffect(() => {
+    if (userId) {
+      dispatch(fetchUserPosts(userId));
+    }
+  }, [userId, dispatch]);
 
   if (!user) return null;
 
@@ -51,7 +45,7 @@ const ProfilePage = () => {
         >
           <MyPostWidget picturePath={""} />
           <Box m="2rem 0" />
-          <PostsWidget userId={user.address} isProfile />
+          <PostsWidget userId={user.address} isProfile posts={posts} />
         </Box>
       </Box>
     </Box>

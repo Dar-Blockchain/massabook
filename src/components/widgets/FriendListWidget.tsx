@@ -12,7 +12,7 @@ type FriendListWidgetProps = {
 const FriendListWidget = ({ userId }: FriendListWidgetProps) => {
   // const dispatch = useDispatch();
   const { palette } = useTheme();
-
+  console.log(userId);
   const [openAddFriendModal, setOpenAddFriendModal] = useState(false);
 
   const handleAddFriend = (walletAddress: string) => {

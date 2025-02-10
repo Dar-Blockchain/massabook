@@ -13,22 +13,28 @@ import {
   IconButton,
   useMediaQuery,
   Collapse,
+  CircularProgress,
 } from "@mui/material";
 
 import Dropzone from "react-dropzone";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "../../redux/store";
+import { AppDispatch, RootState } from "../../redux/store";
 import WidgetWrapper from "../WidgetWrapper";
 import FlexBetween from "../FlexBetween";
 import UserImage from "../UserImage";
+import { createUserPost } from "../../redux/slices/userSlice";
+import { toast } from "react-toastify";
 
 type MyPostWidgetProps = {
   picturePath: string;
 };
 
 const MyPostWidget = ({ picturePath }: MyPostWidgetProps) => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
+  const [postText, setPostText] = useState("");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [isImage, setIsImage] = useState(false);
   const [image, setImage] = useState<File | null>(null);
   const { palette } = useTheme();
@@ -36,6 +42,51 @@ const MyPostWidget = ({ picturePath }: MyPostWidgetProps) => {
   const mediumMain = palette.neutral.mediumMain;
   const medium = palette.neutral.medium;
   const user = useSelector((state: RootState) => state.user);
+
+  const handlePost = async () => {
+    if (!postText.trim() && !image) return;
+    setLoading(true);
+
+    try {
+      // Convert image to base64 if exists
+      const imageBase64 = image ? await convertToBase64(image) : "";
+
+      await dispatch(
+        createUserPost({
+          text: postText,
+          image: imageBase64 || "", // Or handle IPFS upload here
+        })
+      ).unwrap();
+
+      setPostText("");
+      setImage(null);
+      setImagePreview(null);
+      setIsImage(false);
+      toast.success("Post created successfully!");
+    } catch (error) {
+      toast.error("Failed to create post");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const convertToBase64 = (file: File) => {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const handleDrop = (acceptedFiles: File[]) => {
+    if (acceptedFiles && acceptedFiles.length > 0) {
+      const file = acceptedFiles[0];
+      setImage(file);
+      // Create an image preview URL
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   return (
     <WidgetWrapper>
@@ -45,6 +96,7 @@ const MyPostWidget = ({ picturePath }: MyPostWidgetProps) => {
         />
         <InputBase
           placeholder="What's on your mind..."
+          onChange={(e) => setPostText(e.target.value)}
           sx={{
             width: "100%",
             backgroundColor: palette.neutral.light,
@@ -62,10 +114,7 @@ const MyPostWidget = ({ picturePath }: MyPostWidgetProps) => {
           mt="1rem"
           p="1rem"
         >
-          <Dropzone
-            multiple={false}
-            onDrop={(acceptedFiles) => setImage(acceptedFiles[0])}
-          >
+          <Dropzone multiple={false} onDrop={handleDrop}>
             {({ getRootProps, getInputProps }) => (
               <FlexBetween>
                 <Box
@@ -91,7 +140,10 @@ const MyPostWidget = ({ picturePath }: MyPostWidgetProps) => {
                 </Box>
                 {image && (
                   <IconButton
-                    onClick={() => setImage(null)}
+                    onClick={() => {
+                      setImage(null);
+                      setImagePreview(null);
+                    }}
                     sx={{ marginLeft: "1rem" }}
                   >
                     <DeleteOutlined />
@@ -100,6 +152,16 @@ const MyPostWidget = ({ picturePath }: MyPostWidgetProps) => {
               </FlexBetween>
             )}
           </Dropzone>
+          {/* Optionally display an image preview */}
+          {imagePreview && (
+            <Box mt="1rem">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                style={{ maxWidth: "100%", maxHeight: "300px" }}
+              />
+            </Box>
+          )}
         </Box>
       </Collapse>
 
@@ -116,6 +178,8 @@ const MyPostWidget = ({ picturePath }: MyPostWidgetProps) => {
         </FlexBetween>
 
         <Button
+          onClick={handlePost}
+          disabled={!postText.trim() && !image}
           sx={{
             color: palette.background.alt,
             backgroundColor: palette.primary.main,
@@ -123,7 +187,7 @@ const MyPostWidget = ({ picturePath }: MyPostWidgetProps) => {
             textTransform: "none",
           }}
         >
-          POST
+          {loading ? <CircularProgress size={20} color="inherit" /> : "POST"}
         </Button>
       </FlexBetween>
     </WidgetWrapper>

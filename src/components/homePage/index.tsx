@@ -1,54 +1,74 @@
-import { Backdrop, Box, CircularProgress, useMediaQuery } from "@mui/material";
-import { useDispatch, useSelector } from "react-redux";
+import { Box, useMediaQuery } from "@mui/material";
+import { useSelector } from "react-redux";
 import Navbar from "../navbar";
 import UserWidget from "../widgets/UserWidget";
 import MyPostWidget from "../widgets/MyPostWidget";
 import PostsWidget from "../widgets/PostsWidget";
 import AdvertWidget from "../widgets/SuggestedPagesWidget";
 import FriendListWidget from "../widgets/FriendListWidget";
-import { AppDispatch, RootState } from "../../redux/store";
-import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { checkUserProfile } from "../../redux/slices/userSlice";
+import { RootState } from "../../redux/store";
+// import { useNavigate } from "react-router-dom";
+// import { useEffect, useState } from "react";
+// import { checkUserProfile } from "../../redux/slices/userSlice";
 
 const HomePage = () => {
   const isNonMobileScreens = useMediaQuery("(min-width:1000px)");
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.user.user);
   // const { currentWallet, connectedAccount } = useSelector(
   //   (state: RootState) => state.account
   // );
-  const dispatch = useDispatch<AppDispatch>();
-  const [isCheckingProfile, setIsCheckingProfile] = useState(false);
-  // useEffect(() => {
-  //   const verifyUserProfile = async () => {
-  //     if (currentWallet && connectedAccount) {
-  //       const profile = await dispatch(checkUserProfile()).unwrap();
 
-  //       if (profile === null) {
-  //         console.log(
-  //           "First-time login detected, redirecting to /profile-setup"
-  //         );
-  //         navigate("/profile-setup");
-  //       }
-  //     }
-  //     setIsCheckingProfile(false);
-  //   };
-
-  //   verifyUserProfile();
-  // }, [currentWallet, connectedAccount, dispatch, navigate]);
-
-  // useEffect(() => {
-  //   if (user == null) {
-  //     console.log("User is null, redirecting to /");
-  //     navigate("/");
-  //   }
-  //   console.log("user", user);
-  // }, [user, navigate]);
+  // const [isCheckingProfile, setIsCheckingProfile] = useState(false);
+  // this is juust mocked data for now
+  const posts = [
+    {
+      _id: "1",
+      userId: "1",
+      firstName: "John",
+      lastName: "Doe",
+      description: "Hello World",
+      location: "Tunis, Tunisia",
+      picturePath: "/assets/images/rock.jpg",
+      userPicturePath: "/assets/images/avatar default.png",
+      likes: {
+        "1": true,
+      },
+      comments: [],
+    },
+    {
+      _id: "2",
+      userId: "2",
+      firstName: "Jane",
+      lastName: "Doe",
+      description: "Hello World",
+      location: "Tunis, Tunisia",
+      picturePath: "/assets/images/butterfly.jpg",
+      userPicturePath: "/assets/images/avatar default.png",
+      likes: {
+        "1": true,
+      },
+      comments: [],
+    },
+    {
+      _id: "3",
+      userId: "3",
+      firstName: "John",
+      lastName: "Smith",
+      description: "Hello World",
+      location: "Tunis, Tunisia",
+      picturePath: "/assets/images/birds.jpg",
+      userPicturePath: "/assets/images/avatar default.png",
+      likes: {
+        "1": true,
+      },
+      comments: ["This is a first comment", "This is a second comment"],
+    },
+  ];
 
   return (
     <Box>
-      <Backdrop
+      {/* <Backdrop
         sx={{
           color: "#fff",
           zIndex: (theme) => theme.zIndex.drawer + 9999,
@@ -56,7 +76,7 @@ const HomePage = () => {
         open={isCheckingProfile}
       >
         <CircularProgress color="inherit" />
-      </Backdrop>
+      </Backdrop> */}
       <Navbar />
       <Box
         width="100%"
@@ -76,7 +96,7 @@ const HomePage = () => {
           mt={isNonMobileScreens ? undefined : "2rem"}
         >
           <MyPostWidget picturePath={user?.avatar ?? ""} />
-          <PostsWidget userId={user?.address} />
+          <PostsWidget userId={user?.address} posts={posts} />
         </Box>
         {isNonMobileScreens && (
           <Box flexBasis="26%">

@@ -1,19 +1,10 @@
 import React from "react";
-import {
-  AppBar,
-  Box,
-  Button,
-  Container,
-  Toolbar,
-  Typography,
-} from "@mui/material";
+import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
 import ConnectWalletModal from "../ConnectWalletModal";
 import { features } from "../../lib/data";
 import { useNavigate } from "react-router-dom";
 
-type Props = {};
-
-const LandingPage = (props: Props) => {
+const LandingPage = () => {
   const [openConnectWalletModal, setOpenConnectWalletModal] =
     React.useState(false);
   const navigate = useNavigate();

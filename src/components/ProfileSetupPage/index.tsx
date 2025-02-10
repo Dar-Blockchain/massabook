@@ -12,13 +12,13 @@ import {
   Chip,
   FormHelperText,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createUserAccount, Profile } from "../../redux/slices/userSlice";
 import { AppDispatch, RootState } from "../../redux/store";
 import { toast } from "react-toastify";
 import { useDropzone } from "react-dropzone";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import Navbar from "../navbar";
 import WidgetWrapper from "../WidgetWrapper";
 
@@ -34,7 +34,7 @@ const ProfileSetupPage = () => {
   const [xHandle, setXHandle] = useState("");
   const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { palette } = useTheme();
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [topicsError, setTopicsError] = useState("");

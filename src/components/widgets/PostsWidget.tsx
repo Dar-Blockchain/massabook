@@ -6,80 +6,54 @@ import PostWidget from "./PostWidget";
 type PostsWidgetProps = {
   userId: string | undefined;
   isProfile?: boolean;
+  // posts: {
+  //   _id: string;
+  //   userId: string;
+  //   firstName: string;
+  //   lastName: string;
+  //   description: string;
+  //   location: string;
+  //   picturePath: string;
+  //   userPicturePath: string;
+  //   likes: Record<string, boolean>;
+  //   comments: string[];
+  // }[];
+  posts: any[];
 };
 
-const PostsWidget = ({ userId, isProfile = false }: PostsWidgetProps) => {
-  const posts = [
-    {
-      _id: "1",
-      userId: "1",
-      firstName: "John",
-      lastName: "Doe",
-      description: "Hello World",
-      location: "Tunis, Tunisia",
-      picturePath: "/assets/images/rock.jpg",
-      userPicturePath: "/assets/images/avatar default.png",
-      likes: {
-        "1": true,
-      },
-      comments: [],
-    },
-    {
-      _id: "2",
-      userId: "2",
-      firstName: "Jane",
-      lastName: "Doe",
-      description: "Hello World",
-      location: "Tunis, Tunisia",
-      picturePath: "/assets/images/butterfly.jpg",
-      userPicturePath: "/assets/images/avatar default.png",
-      likes: {
-        "1": true,
-      },
-      comments: [],
-    },
-    {
-      _id: "3",
-      userId: "3",
-      firstName: "John",
-      lastName: "Smith",
-      description: "Hello World",
-      location: "Tunis, Tunisia",
-      picturePath: "/assets/images/birds.jpg",
-      userPicturePath: "/assets/images/avatar default.png",
-      likes: {
-        "1": true,
-      },
-      comments: ["This is a first comment", "This is a second comment"],
-    },
-  ];
-
+const PostsWidget = ({
+  userId,
+  isProfile = false,
+  posts,
+}: PostsWidgetProps) => {
   return (
     <>
-      {posts.map(
+      {posts?.map(
         ({
-          _id,
+          id,
           userId,
-          firstName,
-          lastName,
-          description,
-          location,
-          picturePath,
+          // author,
+          // lastName,
+          text,
+          // location,
+          image,
           userPicturePath,
           likes,
           comments,
         }) => (
           <PostWidget
-            key={_id}
-            postId={_id}
+            key={id}
+            postId={id}
             postUserId={userId}
-            name={`${firstName} ${lastName}`}
-            description={description}
-            location={location}
-            picturePath={picturePath}
-            userPicturePath={userPicturePath}
-            likes={likes}
-            comments={comments}
+            name={`Farouk Allani`}
+            description={text}
+            location={"Tunis, Tunisia"}
+            picturePath={image || "/assets/images/rock.jpg"}
+            userPicturePath={
+              userPicturePath || "/assets/images/avatar default.png"
+            }
+            likes={likes || { "1": true }}
+            comments={comments || []}
           />
         )
       )}
