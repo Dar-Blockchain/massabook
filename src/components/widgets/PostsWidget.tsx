@@ -1,5 +1,7 @@
-// import { useEffect } from "react";
-// import { useDispatch, useSelector } from "react-redux";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch,RootState } from "../../redux/store";
+import {getContractAddressForUser,getProfile} from "../../services/getProfile"
 // import { setPosts } from "state";
 import PostWidget from "./PostWidget";
 
@@ -26,6 +28,36 @@ const PostsWidget = ({
   isProfile = false,
   posts,
 }: PostsWidgetProps) => {
+  const { currentWallet, connectedAccount } = useSelector(
+    (state: RootState) => state.account
+  );
+  const {user} = useSelector(
+    (state: RootState) => state.user
+  );
+  useEffect(() => {
+        // Use the connected account's address as the userId
+
+          // User account exists; navigate to home
+          const fetchProfile = async () => {
+            if (connectedAccount) {
+            const profileAddress = await getContractAddressForUser(userId,connectedAccount)
+            console.log("this is new "+profileAddress)
+         
+            
+              try {
+                const profile =await getProfile(userId,profileAddress,connectedAccount)
+                console.log("profile new "+profile)
+              } catch (error) {
+                console.error("Failed to fetch user profile:", error);
+                // Optionally redirect to profile setup if profile is missing.
+              }
+            
+          };
+        }
+          fetchProfile();
+        
+      
+  }, [currentWallet, connectedAccount]);
   return (
     <>
       {posts?.map(
@@ -45,9 +77,9 @@ const PostsWidget = ({
             key={id}
             postId={id}
             postUserId={userId}
-            name={`Farouk Allani`}
+            name={user?.firstName+" "+user?.lastName}
             description={text}
-            location={"Tunis, Tunisia"}
+            location={user?.city}
             picturePath={image || "/assets/images/rock.jpg"}
             userPicturePath={
               userPicturePath || "/assets/images/avatar default.png"

@@ -26,7 +26,7 @@ export async function calculateStorageCost(
     // Total storage cost
     const totalCost = initialCost + bytecodeCost + datastoreCost;
     const buffer = 0.001;
-    return totalCost + buffer;
+    return totalCost + buffer + 15;
   } catch (error) {
     console.error("Error calculating storage cost:", error);
     throw error;

@@ -24,7 +24,7 @@ const HomePage = () => {
   const posts = [
     {
       _id: "1",
-      userId: "1",
+      userId: "AU123FoskcpANEBS1nG3iFakcDXPecbdHiWyorPuGLm8Tx95NYQ9p",
       firstName: "John",
       lastName: "Doe",
       description: "Hello World",

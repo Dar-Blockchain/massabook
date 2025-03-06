@@ -2,9 +2,13 @@ import { Box, Button, Typography, useTheme } from "@mui/material";
 // import { setFriends } from "state";
 import Friend from "../Friend";
 import WidgetWrapper from "../WidgetWrapper";
-import { useState } from "react";
-import AddFriendModal from "../AddFriendModal";
+import { useState ,useEffect} from "react";
+import { useDispatch, useSelector } from "react-redux";
 
+import AddFriendModal from "../AddFriendModal";
+import { AppDispatch, RootState } from "../../redux/store";
+import { fetchfriendsOfUser } from "../../redux/slices/userSlice";
+import {getOwnerOfProfile,getProfile} from '../../services/getProfile'
 type FriendListWidgetProps = {
   userId: string | undefined;
 };
@@ -13,12 +17,34 @@ const FriendListWidget = ({ userId }: FriendListWidgetProps) => {
   // const dispatch = useDispatch();
   const { palette } = useTheme();
   console.log(userId);
+  const [_friends, _setFriends] = useState<any>([]);
   const [openAddFriendModal, setOpenAddFriendModal] = useState(false);
-
+  const dispatch = useDispatch<AppDispatch>();
+  const { connectedAccount,currentWallet } = useSelector((state: RootState) => state.account);
+  const fri = useSelector((state: RootState) => state.user.friends);
+  console.log(fri,"000000000000");
   const handleAddFriend = (walletAddress: string) => {
     console.log("Friend to be added:", walletAddress);
   };
-
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (connectedAccount) {
+        try {
+          // Dispatch the thunk with the user's address.
+          await dispatch(
+            fetchfriendsOfUser(connectedAccount.address)
+          ).unwrap();
+          // Now the Redux store's user property is populated.
+        } catch (error) {
+          console.error("Failed to fetch user profile:", error);
+          // Optionally redirect to profile setup if profile is missing.
+        }
+      }
+    };
+    fetchProfile();
+    }, [currentWallet, connectedAccount]);
+   
+    
   const friends = [
     {
       _id: "1",

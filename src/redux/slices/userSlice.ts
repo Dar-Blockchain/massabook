@@ -8,6 +8,7 @@ import {
   OperationStatus,
   Mas,
   parseMas,
+  bytesToStr
 } from "@massalabs/massa-web3";
 import { calculateStorageCost } from "../../lib/createAccountStorageCost";
 
@@ -100,11 +101,39 @@ export class Post implements Serializable<Post> {
 //   avatar: string;
 //   bio: string;
 // }
+export class Follow implements Serializable<Follow> {
+  constructor(
+    public id: bigint = 0n,
+    public follower: string = "",
+    public followed: string = "",
+    public createdAt: bigint = 0n
+  ) {}
+
+  serialize(): Uint8Array {
+    return new Args()
+      .addU64(this.id)
+      .addString(this.follower) // Serialize the author's profile
+      .addString(this.followed)
+      .addU64(this.createdAt)
+      .serialize();
+  }
+
+  deserialize(data: Uint8Array, offset: number): DeserializedResult<Follow> {
+    const args = new Args(data, offset);
+    this.id = args.nextU64();
+    this.follower = args.nextString();
+    this.followed = args.nextString();
+    this.createdAt = args.nextU64();
+
+    return { instance: this, offset: args.getOffset() };
+  }
+}
 
 interface UserState {
   mode: "light" | "dark";
   user: Profile | null;
   posts: Post[];
+  friends : Follow[] ;
   userContractAddress: string | undefined;
 }
 
@@ -112,6 +141,7 @@ const initialState: UserState = {
   mode: "light",
   user: null,
   posts: [],
+  friends: [],
   userContractAddress: undefined,
 };
 
@@ -128,12 +158,12 @@ export const checkUserProfile = createAsyncThunk<
 
   try {
     const contractAddress =
-      import.meta.env.VITE_CONTRACT_ADDRESS ||
+      import.meta.env.VITE_FACTORY_ADDRESS ||
       "AS1RcLEVYx3K7NVNpfDQhuzEFmpYEhzu8jpLm5YoWCegBEG8hSsc";
     const args = new Args().addString(connectedAccount.address);
     // const contract = new SmartContract(provider, contractAddress);
     const contract = new SmartContract(connectedAccount, contractAddress);
-    const result = await contract.read("getProfile", args);
+    const result = await contract.read("getUserContract", args);
 
     if (result.info.error) {
       console.error("Smart contract error:", result.info.error);
@@ -243,7 +273,7 @@ export const createUserAccount = createAsyncThunk<
       .addString(profileData.city)
       .addString(profileData.telegram)
       .addString(profileData.xHandle)
-      .addU64(parseMas("3")) // here the cost for the profie
+      .addU64(parseMas("5")) // here the cost for the profie
       .serialize();
 
     const profileKeys = [
@@ -263,14 +293,15 @@ export const createUserAccount = createAsyncThunk<
     const operation = await contract.call("createAccount", args, {
       coins: coinsToSend,
     });
-    const operationStatus = await operation.waitSpeculativeExecution();
-    const speculativeEvents = await operation.getSpeculativeEvents();
-    if (operationStatus === OperationStatus.SpeculativeSuccess) {
-      console.log("User account created successfully");
-    } else {
-      console.error("Failed to create user account:", speculativeEvents);
-      throw new Error("Failed to create user account");
-    }
+    console.log(operation)
+    // const operationStatus = await operation.waitSpeculativeExecution();
+    // const speculativeEvents = await operation.getSpeculativeEvents();
+    // if (operationStatus === OperationStatus.SpeculativeSuccess) {
+    //   console.log("User account created successfully");
+    // } else {
+    //   console.error("Failed to create user account:", speculativeEvents);
+    //   throw new Error("Failed to create user account");
+    // }
     return profileData;
   } catch (error) {
     console.error("Error creating user account:", error);
@@ -300,7 +331,6 @@ export const getUserContract = createAsyncThunk<
 
     // Call the read-only smart contract function "getUserContract".
     const result = await contract.read("getUserContract", args);
-
     // If no value was returned, then no contract is deployed yet.
     if (result.value.length === 0) {
       dispatch(setUserContractAddress(undefined));
@@ -308,8 +338,10 @@ export const getUserContract = createAsyncThunk<
     }
 
     // Deserialize the returned bytes to extract the contract address.
-    const deserializedArgs = new Args(result.value);
-    const contractAddress = deserializedArgs.nextString();
+    // const deserializedArgs = new Args(result.value);
+    const contractAddress = bytesToStr(result.value);
+    console.log("getUserContract resultmmmmmmmmmmmmmmmmmm"+ contractAddress);
+
     dispatch(setUserContractAddress(contractAddress));
     return contractAddress;
   } catch (error) {
@@ -335,17 +367,18 @@ export const getUserProfile = createAsyncThunk<
 
   try {
     // Create an instance of the user's contract using the stored address.
+    
     const userContract = new SmartContract(
       connectedAccount,
       userContractAddress
     );
-
+    console.log("userContract****************", userContractAddress);
     // Build the arguments for getProfile: pass the user's address.
     const args = new Args().addString(userId).serialize();
 
     // Call the smart contract's read-only getProfile function.
     const result = await userContract.read("getProfile", args);
-
+    console.log("getUserContract result:", result.value);
     // If no data is returned, throw an error.
     if (result.value.length === 0) {
       throw new Error("Profile not found");
@@ -469,7 +502,31 @@ export const fetchUserPosts = createAsyncThunk<
   console.log("post array from getUserPosts", posts);
   return posts;
 });
+export const fetchfriendsOfUser = createAsyncThunk<
+  Profile[],
+  string,
+  { state: RootState }
+>("user/fetchfriendsOfUser", async (userId, { getState }) => {
+  const state = getState();
+  const { connectedAccount } = state.account;
+  const { userContractAddress } = state.user;
 
+  if (!connectedAccount || !userContractAddress) {
+    throw new Error("Not connected to wallet or no contract address");
+  }
+
+  const contract = new SmartContract(connectedAccount, userContractAddress);
+  const args = new Args().addU64(0n).serialize();
+
+  const result = await contract.read("getFollowedProfiles", args);
+  if (result.info.error) {
+    throw new Error(result.info.error);
+  }
+  const Profiles = new Args(result.value).nextSerializableObjectArray<Profile>(Profile);
+  console.log("result from getFollowedProfiles"+Profiles)
+
+  return Profiles;
+});
 const userSlice = createSlice({
   name: "user",
   initialState,
@@ -511,6 +568,10 @@ const userSlice = createSlice({
 
     builder.addCase(fetchUserPosts.fulfilled, (state, action) => {
       state.posts = action.payload;
+      // state.loadingPosts = false;
+    });
+    builder.addCase(fetchfriendsOfUser.fulfilled, (state, action) => {
+      state.friends = action.payload;
       // state.loadingPosts = false;
     });
   },
