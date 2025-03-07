@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { themeSettings } from "./theme";
 import { AppDispatch, RootState } from "./redux/store";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import HomePage from "./components/homePage";
 import ProfilePage from "./components/profilePage";
 import {
@@ -36,48 +36,39 @@ function App() {
   // const user = useSelector((state: RootState) => state.user.user);
   const [isCheckingProfile, setIsCheckingProfile] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const checkAccount = async () => {
       if (currentWallet && connectedAccount) {
-        // Use the connected account's address as the userId
         const userContractAddress = await dispatch(
           getUserContract(connectedAccount.address)
         ).unwrap();
 
         if (userContractAddress) {
-          console.log(
-            "User account exists; navigate to home and the address is",
-            userContractAddress
-          );
-          // User account exists; navigate to home
-          navigate("/home");
+          console.log("User account exists; address:", userContractAddress);
           const fetchProfile = async () => {
-            if (connectedAccount) {
-              try {
-                // Dispatch the thunk with the user's address.
-                await dispatch(
-                  getUserProfile(connectedAccount.address)
-                ).unwrap();
-                // Now the Redux store's user property is populated.
+            try {
+              await dispatch(getUserProfile(connectedAccount.address)).unwrap();
+
+              if (["/", "/profile-setup"].includes(location.pathname)) {
                 navigate("/home");
-              } catch (error) {
-                console.error("Failed to fetch user profile:", error);
-                // Optionally redirect to profile setup if profile is missing.
-                navigate("/profile-setup");
               }
+            } catch (error) {
+              console.error("Failed to fetch profile:", error);
+              navigate("/profile-setup");
             }
           };
-          fetchProfile();
+          await fetchProfile();
         } else {
-          // No user contract found; redirect to profile setup page
-          navigate("/profile-setup");
+          if (location.pathname !== "/profile-setup") {
+            navigate("/profile-setup");
+          }
         }
       }
     };
     checkAccount();
-  }, [currentWallet, connectedAccount]);
-
+  }, [currentWallet, connectedAccount, dispatch, navigate, location.pathname]);
   // useEffect(() => {
   //   console.log("currentWallet&&&&", currentWallet);
   //   console.log("connectedAccount&&&&&", connectedAccount);
