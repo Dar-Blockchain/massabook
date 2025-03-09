@@ -31,8 +31,9 @@ export class Profile implements Serializable<Profile> {
       .addString(this.address)
       .addString(this.firstName)
       .addString(this.lastName)
-      .addString(this.avatar)
       .addString(this.bio)
+      .addString(this.avatar)
+     
       .addString(this.country)
       .addString(this.city)
       .addString(this.telegram)
@@ -47,8 +48,9 @@ export class Profile implements Serializable<Profile> {
     this.address = args.nextString();
     this.firstName = args.nextString();
     this.lastName = args.nextString();
-    this.avatar = args.nextString();
     this.bio = args.nextString();
+    this.avatar = args.nextString();
+    
     this.country = args.nextString();
     this.city = args.nextString();
     this.telegram = args.nextString();
@@ -62,6 +64,8 @@ export class Post implements Serializable<Post> {
   constructor(
     public id: bigint = 0n,
     public author: string = "",
+    public authorName: string = '',
+    public authorAvatar: string = '',
     public text: string = "",
     public image: string = "",
     public isRepost: boolean = false,
@@ -73,6 +77,8 @@ export class Post implements Serializable<Post> {
     return new Args()
       .addU64(this.id)
       .addString(this.author) // Serialize the author's profile
+      .addString(this.authorName)
+      .addString(this.authorAvatar)
       .addString(this.text)
       .addString(this.image)
       .addBool(this.isRepost)
@@ -85,6 +91,8 @@ export class Post implements Serializable<Post> {
     const args = new Args(data, offset);
     this.id = args.nextU64();
     this.author = args.nextString();
+    this.authorName = args.nextString();
+    this.authorAvatar = args.nextString();
     this.text = args.nextString();
     this.image = args.nextString();
     this.isRepost = args.nextBool();
@@ -133,7 +141,8 @@ interface UserState {
   mode: "light" | "dark";
   user: Profile | null;
   posts: Post[];
-  friends : Follow[] ;
+  friends : Profile[] ;
+  friendsposts : Post[];
   userContractAddress: string | undefined;
 }
 
@@ -142,6 +151,7 @@ const initialState: UserState = {
   user: null,
   posts: [],
   friends: [],
+  friendsposts : [],
   userContractAddress: undefined,
 };
 
@@ -502,6 +512,33 @@ export const fetchUserPosts = createAsyncThunk<
   console.log("post array from getUserPosts", posts);
   return posts;
 });
+
+export const fetchFriendsPosts = createAsyncThunk<
+  Post[],
+  string,
+  { state: RootState }
+>("user/fetchFriendsPosts", async (userId, { getState }) => {
+  const state = getState();
+  const { connectedAccount } = state.account;
+  const { userContractAddress } = state.user;
+
+  if (!connectedAccount || !userContractAddress) {
+    throw new Error("Not connected to wallet or no contract address");
+  }
+
+  const contract = new SmartContract(connectedAccount, userContractAddress);
+  const args = new Args().addString(userId).serialize();
+
+  const result = await contract.read("getFollowedProfilesLastPosts", args);
+  if (result.info.error) {
+    throw new Error(result.info.error);
+  }
+
+  const posts = new Args(result.value).nextSerializableObjectArray<Post>(Post);
+  console.log("post array from getUserPosts", posts);
+  return posts;
+});
+
 export const fetchfriendsOfUser = createAsyncThunk<
   Profile[],
   string,
@@ -574,6 +611,11 @@ const userSlice = createSlice({
       state.friends = action.payload;
       // state.loadingPosts = false;
     });
+    builder.addCase(fetchFriendsPosts.fulfilled, (state, action) => {
+      state.friendsposts = action.payload;
+      // state.loadingPosts = false;
+    });
+    
   },
 });
 

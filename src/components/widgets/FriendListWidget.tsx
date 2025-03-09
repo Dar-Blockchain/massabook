@@ -8,7 +8,6 @@ import { useDispatch, useSelector } from "react-redux";
 import AddFriendModal from "../AddFriendModal";
 import { AppDispatch, RootState } from "../../redux/store";
 import { fetchfriendsOfUser } from "../../redux/slices/userSlice";
-import {getOwnerOfProfile,getProfile} from '../../services/getProfile'
 type FriendListWidgetProps = {
   userId: string | undefined;
 };
@@ -45,29 +44,7 @@ const FriendListWidget = ({ userId }: FriendListWidgetProps) => {
     }, [currentWallet, connectedAccount]);
    
     
-  const friends = [
-    {
-      _id: "1",
-      firstName: "John",
-      lastName: "Doe",
-      occupation: "Software Engineer",
-      picturePath: "/assets/images/avatar default.png",
-    },
-    {
-      _id: "2",
-      firstName: "Jane",
-      lastName: "Doe",
-      occupation: "Software Engineer",
-      picturePath: "/assets/images/avatar default.png",
-    },
-    {
-      _id: "3",
-      firstName: "John",
-      lastName: "Smith",
-      occupation: "Software Engineer",
-      picturePath: "/assets/images/avatar default.png",
-    },
-  ];
+ 
 
   return (
     <WidgetWrapper>
@@ -99,13 +76,13 @@ const FriendListWidget = ({ userId }: FriendListWidgetProps) => {
         </Button>
       </Box>
       <Box display="flex" flexDirection="column" gap="1.5rem">
-        {friends.map((friend) => (
+        {fri.map((friend) => (
           <Friend
-            key={friend._id}
-            friendId={friend._id}
+            key={friend.address}
+            friendId={friend.address}
             name={`${friend.firstName} ${friend.lastName}`}
-            subtitle={friend.occupation}
-            userPicturePath={friend.picturePath}
+            subtitle={friend.city}
+            userPicturePath={friend.avatar}
           />
         ))}
       </Box>

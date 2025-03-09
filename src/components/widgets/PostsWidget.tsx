@@ -21,12 +21,14 @@ type PostsWidgetProps = {
   //   comments: string[];
   // }[];
   posts: any[];
+  friPosts: any[];
 };
 
 const PostsWidget = ({
   userId,
   isProfile = false,
   posts,
+  friPosts
 }: PostsWidgetProps) => {
   const { currentWallet, connectedAccount } = useSelector(
     (state: RootState) => state.account
@@ -34,6 +36,23 @@ const PostsWidget = ({
   const {user} = useSelector(
     (state: RootState) => state.user
   );
+  useEffect(() => {
+    // Use the connected account's address as the userId
+
+      // User account exists; navigate to home
+      const fetchPosts = async () => {
+        if (connectedAccount) {
+        friPosts.map(async (friPost) => {
+          console.log(friPost);
+        })
+        
+      };
+    }
+      fetchPosts();
+    
+  
+}, [currentWallet, connectedAccount]);
+
   useEffect(() => {
         // Use the connected account's address as the userId
 
@@ -58,14 +77,16 @@ const PostsWidget = ({
         
       
   }, [currentWallet, connectedAccount]);
+ 
   return (
     <>
-      {posts?.map(
+      {friPosts?.map(
         ({
           id,
           userId,
           // author,
-          // lastName,
+          authorName,
+          authorAvatar,
           text,
           // location,
           image,
@@ -77,12 +98,12 @@ const PostsWidget = ({
             key={id}
             postId={id}
             postUserId={userId}
-            name={user?.firstName+" "+user?.lastName}
+            name={authorName}
             description={text}
             location={user?.city}
-            picturePath={image || "/assets/images/rock.jpg"}
+            picturePath={authorAvatar || "/assets/images/rock.jpg"}
             userPicturePath={
-              userPicturePath || "/assets/images/avatar default.png"
+              authorAvatar || "/assets/images/avatar default.png"
             }
             likes={likes || { "1": true }}
             comments={comments || []}

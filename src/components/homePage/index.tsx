@@ -1,24 +1,45 @@
 import { Box, useMediaQuery } from "@mui/material";
-import { useSelector } from "react-redux";
 import Navbar from "../navbar";
 import UserWidget from "../widgets/UserWidget";
 import MyPostWidget from "../widgets/MyPostWidget";
 import PostsWidget from "../widgets/PostsWidget";
 import AdvertWidget from "../widgets/SuggestedPagesWidget";
 import FriendListWidget from "../widgets/FriendListWidget";
-import { RootState } from "../../redux/store";
-// import { useNavigate } from "react-router-dom";
-// import { useEffect, useState } from "react";
-// import { checkUserProfile } from "../../redux/slices/userSlice";
+import { RootState,AppDispatch } from "../../redux/store";
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect } from "react";
+import { fetchFriendsPosts } from "../../redux/slices/userSlice";
 
+// import { checkUserProfile } from "../../redux/slices/userSlice";
+ 
+   
 const HomePage = () => {
   const isNonMobileScreens = useMediaQuery("(min-width:1000px)");
-  // const navigate = useNavigate();
+  const friPosts = useSelector((state: RootState) => state.user.friendsposts);
+  console.log(friPosts," ***********");
+    const dispatch = useDispatch<AppDispatch>();
+  
   const user = useSelector((state: RootState) => state.user.user);
-  // const { currentWallet, connectedAccount } = useSelector(
-  //   (state: RootState) => state.account
-  // );
-
+  const { currentWallet, connectedAccount } = useSelector(
+    (state: RootState) => state.account
+  );
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (connectedAccount) {
+        try {
+          // Dispatch the thunk with the user's address.
+          await dispatch(
+            fetchFriendsPosts(connectedAccount.address)
+          ).unwrap();
+          // Now the Redux store's user property is populated.
+        } catch (error) {
+          console.error("Failed to fetch user profile:", error);
+          // Optionally redirect to profile setup if profile is missing.
+        }
+      }
+    };
+    fetchProfile();
+    }, [currentWallet, connectedAccount]);
   // const [isCheckingProfile, setIsCheckingProfile] = useState(false);
   // this is juust mocked data for now
   const posts = [
@@ -96,7 +117,7 @@ const HomePage = () => {
           mt={isNonMobileScreens ? undefined : "2rem"}
         >
           <MyPostWidget picturePath={user?.avatar ?? ""} />
-          <PostsWidget userId={user?.address} posts={posts} />
+          <PostsWidget userId={user?.address} posts={posts} friPosts={friPosts} />
         </Box>
         {isNonMobileScreens && (
           <Box flexBasis="26%">
