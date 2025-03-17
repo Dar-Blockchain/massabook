@@ -36,8 +36,7 @@ const PostsWidget = ({
   const {user} = useSelector(
     (state: RootState) => state.user
   );
-  console.log(posts,"...............")
-  console.log(friPosts,"...............")
+ 
 
   useEffect(() => {
     // Use the connected account's address as the userId
@@ -83,7 +82,7 @@ const PostsWidget = ({
  
   return (
     <>
-      {friPosts?.map(
+      {posts?.map(
         ({
           id,
           author,

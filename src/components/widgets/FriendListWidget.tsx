@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import AddFriendModal from "../AddFriendModal";
 import { AppDispatch, RootState } from "../../redux/store";
 import { fetchfriendsOfUser } from "../../redux/slices/userSlice";
+import { followProfile } from "../../services/getProfile";
 type FriendListWidgetProps = {
   userId: string | undefined;
 };
@@ -20,10 +21,13 @@ const FriendListWidget = ({ userId }: FriendListWidgetProps) => {
   const [openAddFriendModal, setOpenAddFriendModal] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const { connectedAccount,currentWallet } = useSelector((state: RootState) => state.account);
+  const { userContractAddress  } = useSelector((state: RootState) => state.user);
+
   const fri = useSelector((state: RootState) => state.user.friends);
   console.log(fri,"000000000000");
-  const handleAddFriend = (walletAddress: string) => {
-    console.log("Friend to be added:", walletAddress);
+  const handleAddFriend = async(walletAddress: string) => {
+    const res=await followProfile(userContractAddress,connectedAccount,walletAddress)
+    console.log(res);
   };
   useEffect(() => {
     const fetchProfile = async () => {
@@ -76,7 +80,7 @@ const FriendListWidget = ({ userId }: FriendListWidgetProps) => {
         </Button>
       </Box>
       <Box display="flex" flexDirection="column" gap="1.5rem">
-        {fri.map((friend) => (
+        {fri?.map((friend) => (
           <Friend
             key={friend.address}
             friendId={friend.address}

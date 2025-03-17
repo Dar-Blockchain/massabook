@@ -4,8 +4,9 @@ import {
     SmartContract,
     DeserializedResult,
   Serializable,
-  bytesToStr
-    
+  bytesToStr,
+  Mas,
+  OperationStatus
   } from "@massalabs/massa-web3";
 
   export class Profile implements Serializable<Profile> {
@@ -27,8 +28,9 @@ import {
         .addString(this.address)
         .addString(this.firstName)
         .addString(this.lastName)
-        .addString(this.avatar)
         .addString(this.bio)
+        .addString(this.avatar)
+        
         .addString(this.country)
         .addString(this.city)
         .addString(this.telegram)
@@ -43,8 +45,9 @@ import {
       this.address = args.nextString();
       this.firstName = args.nextString();
       this.lastName = args.nextString();
-      this.avatar = args.nextString();
       this.bio = args.nextString();
+      this.avatar = args.nextString();
+      
       this.country = args.nextString();
       this.city = args.nextString();
       this.telegram = args.nextString();
@@ -53,8 +56,50 @@ import {
       return { instance: this, offset: args.getOffset() };
     }
   }
+  export class Post implements Serializable<Post> {
+    constructor(
+      public id: bigint = 0n,
+      public author: string = "",
+      public authorName: string = '',
+      public authorAvatar: string = '',
+      public text: string = "",
+      public image: string = "",
+      public isRepost: boolean = false,
+      public repostedPostId: bigint = 0n,
+      public createdAt: bigint = 0n
+    ) {}
   
+    serialize(): Uint8Array {
+      return new Args()
+        .addU64(this.id)
+        .addString(this.author) // Serialize the author's profile
+        .addString(this.authorName)
+        .addString(this.authorAvatar)
+        .addString(this.text)
+        .addString(this.image)
+        .addBool(this.isRepost)
+        .addU64(this.repostedPostId)
+        .addU64(this.createdAt)
+        .serialize();
+    }
+  
+    deserialize(data: Uint8Array, offset: number): DeserializedResult<Post> {
+      const args = new Args(data, offset);
+      this.id = args.nextU64();
+      this.author = args.nextString();
+      this.authorName = args.nextString();
+      this.authorAvatar = args.nextString();
+      this.text = args.nextString();
+      this.image = args.nextString();
+      this.isRepost = args.nextBool();
+      this.repostedPostId = args.nextU64();
+      this.createdAt = args.nextU64();
+  
+      return { instance: this, offset: args.getOffset() };
+    }
+  }
 export async function getContractAddressForUser(address: any,connectedAccount : any){
+  console.log(connectedAccount,"zzzzzzz")
     const factoryAddress =
     import.meta.env.VITE_FACTORY_ADDRESS ||
     "AS12EyXkBNw1eFmEfS7QQBfZfbdCTq2kRQN1PUe3HREJb3ZF5YocV";
@@ -129,6 +174,46 @@ export async function getOwnerOfProfile(profileAddress: any,connectedAccount : a
       
   
       return address;
+    
+   
+}
+export async function getUserPosts(userAddress : any,profileAddress: any,connectedAccount : any){
+   const contract = new SmartContract(connectedAccount, profileAddress);
+    const args = new Args().addString(userAddress).serialize();
+  
+    const result = await contract.read("getUserPosts", args);
+    if (result.info.error) {
+      throw new Error(result.info.error);
+    }
+  
+    const posts = new Args(result.value).nextSerializableObjectArray<Post>(Post);
+    console.log("post array from getUserPosts", posts);
+    return posts;
+}
+
+export async function followProfile(profileAddress: any,connectedAccount : any,followUserAddress: any){
+   
+  const userContract = new SmartContract(
+      connectedAccount,
+      profileAddress
+    );
+    const userProfile:any = await getContractAddressForUser(followUserAddress,connectedAccount);
+    const operation = await userContract.call(
+      'followProfile',
+      new Args().addString(userProfile).addString(followUserAddress).serialize(),
+      {
+        coins: Mas.fromString('0.02'),
+      },
+    );
+    const operationStatus = await operation.waitFinalExecution();
+    console.log('Operation :'+operation)
+    if (operationStatus === OperationStatus.Success) {
+      console.log('User followed successfully');
+      return true;
+    } else {
+      console.error('Operation failed with status:', operationStatus);
+      return false;
+    }
     
    
 }

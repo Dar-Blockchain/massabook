@@ -10,7 +10,6 @@ import {
   Alert,
 } from "@mui/material";
 import { useState } from "react";
-import { MASSA_STATION_INSTALL } from "../constants";
 
 type Props = {
   open: boolean;

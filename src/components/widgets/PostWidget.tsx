@@ -25,7 +25,7 @@ type PostWidgetProps = {
   postUserId: string;
   name: string;
   description: string;
-  location: string;
+  location: string | undefined;
   picturePath: string;
   userPicturePath: string;
   likes: Record<string, boolean>;

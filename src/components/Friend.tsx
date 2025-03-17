@@ -10,7 +10,7 @@ import UserImage from "./UserImage";
 type FriendProps = {
   friendId: string;
   name: string;
-  subtitle: string;
+  subtitle: string | undefined;
   userPicturePath: string;
 };
 
@@ -90,7 +90,7 @@ const Friend = ({ friendId, name, subtitle, userPicturePath }: FriendProps) => {
           </Typography>
         </Box>
       </FlexBetween>
-      <IconButton
+      {/* <IconButton
         // onClick={() => patchFriend()}
         sx={{ backgroundColor: primaryLight, p: "0.6rem" }}
       >
@@ -99,7 +99,7 @@ const Friend = ({ friendId, name, subtitle, userPicturePath }: FriendProps) => {
         ) : (
           <PersonAddOutlined sx={{ color: primaryDark }} />
         )}
-      </IconButton>
+      </IconButton> */}
     </FlexBetween>
   );
 };

@@ -11,6 +11,7 @@ import {
   useTheme,
   Chip,
   FormHelperText,
+  Avatar,
 } from "@mui/material";
 import { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -32,7 +33,9 @@ const ProfileSetupPage = () => {
   const [city, setCity] = useState("");
   const [telegram, setTelegram] = useState("");
   const [xHandle, setXHandle] = useState("");
-  const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
+  // const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
+  const [avatarURL, setavatarURL] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
   // const navigate = useNavigate();
   const { palette } = useTheme();
@@ -80,29 +83,29 @@ const ProfileSetupPage = () => {
     }
   };
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
+  // const onDrop = useCallback((acceptedFiles: File[]) => {
+  //   const file = acceptedFiles[0];
+  //   if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setAvatarBase64(result);
-    };
-    reader.onerror = (error) => {
-      console.error("Error reading file:", error);
-      toast.error("Failed to read the selected image.");
-    };
-    reader.readAsDataURL(file);
-  }, []);
+  //   const reader = new FileReader();
+  //   reader.onload = () => {
+  //     const result = reader.result as string;
+  //     setAvatarBase64(result);
+  //   };
+  //   reader.onerror = (error) => {
+  //     console.error("Error reading file:", error);
+  //     toast.error("Failed to read the selected image.");
+  //   };
+  //   reader.readAsDataURL(file);
+  // }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      "image/*": [],
-    },
-    multiple: false,
-  });
+  // const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  //   onDrop,
+  //   accept: {
+  //     "image/*": [],
+  //   },
+  //   multiple: false,
+  // });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,18 +115,18 @@ const ProfileSetupPage = () => {
       return;
     }
 
-    if (!avatarBase64) {
-      toast.error("Please upload an avatar image before saving.");
+    if (!avatarURL) {
+      toast.error("Please add an avatar image URL before saving.");
       return;
     }
 
-    console.log("avatar base64", avatarBase64);
+    console.log("avatar base64", avatarURL);
 
     const profileData = new Profile(
       connectedAccount.address,
       firstName,
       lastName,
-      avatarBase64,
+      avatarURL,
       bio,
 
       country,
@@ -267,7 +270,7 @@ const ProfileSetupPage = () => {
                 {/* Right Column */}
                 <Grid item xs={12} md={6}>
                   {/* Dropzone area for avatar upload */}
-                  <Box
+                  {/* <Box
                     {...getRootProps()}
                     sx={{
                       border: "2px dashed #ccc",
@@ -306,8 +309,19 @@ const ProfileSetupPage = () => {
                           : "Drag & drop an avatar image, or click to select"}
                       </Typography>
                     )}
-                  </Box>
-
+                  </Box> */}
+                  <TextField
+                    label="Avatar URL"
+                    fullWidth
+                    value={avatarURL}
+                    onChange={(e) => setavatarURL(e.target.value)}
+                    margin="normal"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "8px",
+                      },
+                    }}
+                  />
                   <TextField
                     label="Telegram"
                     fullWidth

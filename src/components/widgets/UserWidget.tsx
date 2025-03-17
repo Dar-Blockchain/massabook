@@ -27,9 +27,13 @@ import { RootState } from "../../redux/store";
 type UserWidgetProps = {
   userId: string;
   picturePath: string;
+  name : string;
+  city:string;
+  country:string;
+  bio:string;
 };
 
-const UserWidget = ({ userId, picturePath }: UserWidgetProps) => {
+const UserWidget = ({ userId, picturePath,name,city,country ,bio}: UserWidgetProps) => {
   // const [user, setUser] = useState(null);
   const { palette } = useTheme();
   const navigate = useNavigate();
@@ -74,17 +78,17 @@ const UserWidget = ({ userId, picturePath }: UserWidgetProps) => {
                 },
               }}
             >
-              {user?.firstName} {user?.lastName}
+              {name}
             </Typography>
             <Typography color={medium}>{friends.length} friends</Typography>
           </Box>
         </FlexBetween>
-        <IconButton
+        {/* <IconButton
           onClick={() => navigate(`/update-profile`)}
           sx={{ cursor: "pointer" }}
         >
           <ManageAccountsOutlined />
-        </IconButton>
+        </IconButton> */}
       </FlexBetween>
 
       <Divider />
@@ -94,12 +98,12 @@ const UserWidget = ({ userId, picturePath }: UserWidgetProps) => {
         <Box display="flex" alignItems="center" gap="1rem" mb="0.5rem">
           <LocationOnOutlined fontSize="medium" sx={{ color: main }} />
           <Typography color={medium}>
-            {user?.city}, {user?.country || "No location"}
+            {city}, {country || "No location"}
           </Typography>
         </Box>
         <Box display="flex" alignItems="center" gap="1rem">
           <InfoOutlined fontSize="medium" sx={{ color: main }} />
-          <Typography color={medium}>{user?.bio}</Typography>
+          <Typography color={medium}>{bio}</Typography>
         </Box>
       </Box>
 

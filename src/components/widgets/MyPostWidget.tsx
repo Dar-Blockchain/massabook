@@ -36,6 +36,8 @@ const MyPostWidget = ({ picturePath }: MyPostWidgetProps) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isImage, setIsImage] = useState(false);
+  const [imageURL, setImageURL] = useState<string | null>("");
+
   const [image, setImage] = useState<File | null>(null);
   const { palette } = useTheme();
   const isNonMobileScreens = useMediaQuery("(min-width: 1000px)");
@@ -44,12 +46,13 @@ const MyPostWidget = ({ picturePath }: MyPostWidgetProps) => {
   const user = useSelector((state: RootState) => state.user);
 
   const handlePost = async () => {
-    if (!postText.trim() && !image) return;
+    console.log("aaaaa")
+    if (!postText.trim() && !imageURL) return;
     setLoading(true);
 
     try {
       // Convert image to base64 if exists
-      const imageBase64 = image ? await convertToBase64(image) : "";
+      const imageBase64 = imageURL ? imageURL  : "";
 
       await dispatch(
         createUserPost({
@@ -92,7 +95,7 @@ const MyPostWidget = ({ picturePath }: MyPostWidgetProps) => {
     <WidgetWrapper>
       <FlexBetween gap="1.5rem">
         <UserImage
-          image={user.user?.avatar || "/assets/images/avatar default.png"}
+          image={picturePath || "/assets/images/avatar default.png"}
         />
         <InputBase
           placeholder="What's on your mind..."
@@ -114,44 +117,20 @@ const MyPostWidget = ({ picturePath }: MyPostWidgetProps) => {
           mt="1rem"
           p="1rem"
         >
-          <Dropzone multiple={false} onDrop={handleDrop}>
-            {({ getRootProps, getInputProps }) => (
-              <FlexBetween>
-                <Box
-                  {...getRootProps()}
-                  border={`2px dashed ${palette.primary.main}`}
-                  p="1rem"
-                  width="100%"
-                  sx={{ "&:hover": { cursor: "pointer" } }}
-                >
-                  <input {...getInputProps()} />
-                  {!image ? (
-                    <Typography color={palette.neutral.main}>
-                      Add Image Here
-                    </Typography>
-                  ) : (
-                    <FlexBetween>
-                      <Typography color={palette.neutral.main}>
-                        {image.name}
-                      </Typography>
-                      <EditOutlined />
-                    </FlexBetween>
-                  )}
-                </Box>
-                {image && (
-                  <IconButton
-                    onClick={() => {
-                      setImage(null);
-                      setImagePreview(null);
-                    }}
-                    sx={{ marginLeft: "1rem" }}
-                  >
-                    <DeleteOutlined />
-                  </IconButton>
-                )}
-              </FlexBetween>
-            )}
-          </Dropzone>
+           <FlexBetween gap="1.5rem">
+       
+        <InputBase
+          placeholder="Image URL"
+          onChange={(e) => setImageURL(e.target.value)}
+          sx={{
+            width: "100%",
+            backgroundColor: palette.neutral.light,
+            borderRadius: "2rem",
+            padding: "1rem 2rem",
+          }}
+        />
+      </FlexBetween>
+         
           {/* Optionally display an image preview */}
           {imagePreview && (
             <Box mt="1rem">
@@ -179,7 +158,7 @@ const MyPostWidget = ({ picturePath }: MyPostWidgetProps) => {
 
         <Button
           onClick={handlePost}
-          disabled={!postText.trim() && !image}
+          //disabled={!postText.trim() && !image}
           sx={{
             color: palette.background.alt,
             backgroundColor: palette.primary.main,

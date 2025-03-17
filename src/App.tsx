@@ -14,7 +14,6 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import HomePage from "./components/homePage";
 import ProfilePage from "./components/profilePage";
 import {
-  checkUserProfile,
   getUserContract,
   getUserProfile,
 } from "./redux/slices/userSlice";
