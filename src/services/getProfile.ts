@@ -98,6 +98,44 @@ import {
       return { instance: this, offset: args.getOffset() };
     }
   }
+
+  export class Comment implements Serializable<Comment> {
+    constructor(
+      public id: bigint = 0n, // Use bigint for u64 values
+      public postId: bigint = 0n, // postId as bigint
+      public commenter: string = '', // Address serialized as string
+      public text: string = '',
+      public createdAt: bigint = 0n, // createdAt as bigint
+      public parentId: bigint = 0n, // parentId as bigint
+    ) {}
+  
+    // Serialize the Comment object
+    serialize(): Uint8Array {
+      const args = new Args()
+        .addU64(this.id)
+        .addU64(this.postId)
+        .addString(this.commenter) // Address as string
+        .addString(this.text)
+        .addU64(this.createdAt)
+        .addU64(this.parentId);
+  
+      return new Uint8Array(args.serialize());
+    }
+  
+    // Deserialize the Comment object
+    deserialize(data: Uint8Array, offset: number): DeserializedResult<Comment> {
+      const args = new Args(data, offset);
+  
+      this.id = args.nextU64(); // Deserialize id
+      this.postId = args.nextU64(); // Deserialize postId
+      this.commenter = args.nextString(); // Deserialize commenter
+      this.text = args.nextString(); // Deserialize text
+      this.createdAt = args.nextU64(); // Deserialize createdAt
+      this.parentId = args.nextU64(); // Deserialize parentId
+  
+      return { instance: this, offset: args.getOffset() };
+    }
+  }
 export async function getContractAddressForUser(address: any,connectedAccount : any){
   console.log(connectedAccount,"zzzzzzz")
     const factoryAddress =
@@ -216,4 +254,53 @@ export async function followProfile(profileAddress: any,connectedAccount : any,f
     }
     
    
+}
+
+export async function commentPost(connectedAccount : any,ownerComment: any,text:any,postID:any){
+   
+ 
+    const userProfile:any = await getContractAddressForUser(ownerComment,connectedAccount);
+    const userContract = new SmartContract(
+      connectedAccount,
+      userProfile
+    );
+    const operation = await userContract.call(
+      'addPostComment',
+      new Args().addU64(postID).addString(text).serialize(),
+      {
+        coins: Mas.fromString('0.02'),
+      },
+    );
+    const operationStatus = await operation.waitFinalExecution();
+    console.log('Operation :'+operation)
+    if (operationStatus === OperationStatus.Success) {
+      console.log('User followed successfully');
+      return true;
+    } else {
+      console.error('Operation failed with status:', operationStatus);
+      return false;
+    }
+    
+   
+}
+
+
+export async function getPostComments(connectedAccount : any,ownerComment: any, postId: any) {
+  const userProfile:any = await getContractAddressForUser(ownerComment,connectedAccount);
+  console.log(`Getting address ${userProfile} comments`);
+  const userContract = new SmartContract(
+    connectedAccount,
+    userProfile
+  );
+  const result = await userContract.read(
+    'getPostComments',
+    new Args().addU64(postId).serialize(),
+  );
+
+  const deserializedComments = new Args(
+    result.value,
+  ).nextSerializableObjectArray<Comment>(Comment);
+
+  console.log(`Post ${postId} comments :`, deserializedComments);
+  return deserializedComments;
 }

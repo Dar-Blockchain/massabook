@@ -19,6 +19,11 @@ import { useState } from "react";
 import WidgetWrapper from "../WidgetWrapper";
 import Friend from "../Friend";
 import FlexBetween from "../FlexBetween";
+import { commentPost, getPostComments } from "../../services/getProfile";
+import { useSelector } from "react-redux";
+import { RootState } from "../../redux/store";
+import UserImage from "../UserImage";
+import { useNavigate } from "react-router-dom";
 
 type PostWidgetProps = {
   postId: string;
@@ -41,21 +46,40 @@ const PostWidget = ({
   picturePath,
   userPicturePath,
   likes,
-  comments,
 }: PostWidgetProps) => {
   const [isComments, setIsComments] = useState(false);
+
   const [newComment, setNewComment] = useState("");
+  const [comments, setComments] = useState<any>(null);
+
+
   const isLiked = true;
   const likeCount = 5;
-
+  const { currentWallet, connectedAccount } = useSelector(
+    (state: RootState) => state.account
+  );
   const { palette } = useTheme();
+  const navigate = useNavigate();
+
   const main = palette.neutral.main;
   const primary = palette.primary.main;
 
-  const handleAddComment = () => {
+  const handleAddComment = async() => {
+    const resp = await commentPost(connectedAccount,postUserId,newComment,postId)
     setNewComment("");
   };
-
+  const handlegetCommants = async() => {
+    if(!isComments){  
+      console.log(connectedAccount,"77777777777777")
+    const _comments = await getPostComments(connectedAccount,postUserId, postId);
+    console.log(_comments);
+    setComments(_comments);
+    setIsComments(true);
+    }
+    else{
+      setIsComments(false);
+    }
+  }
   return (
     <WidgetWrapper m="2rem 0">
       <Friend
@@ -91,10 +115,10 @@ const PostWidget = ({
           </FlexBetween>
 
           <FlexBetween gap="0.3rem">
-            <IconButton onClick={() => setIsComments(!isComments)}>
+            <IconButton onClick={() => handlegetCommants()}>
               <ChatBubbleOutlineOutlined />
             </IconButton>
-            <Typography>{comments.length}</Typography>
+            {/* <Typography>{comments?.length}</Typography> */}
             <IconButton>
               {/* Repost/Forward Icon */}
               <svg
@@ -120,15 +144,51 @@ const PostWidget = ({
       {/* Smooth transition for comments and input field */}
       <Collapse in={isComments} timeout="auto" unmountOnExit>
         <Box mt="0.5rem">
-          {comments.map((comment, i) => (
-            <Box key={`${name}-${i}`}>
+          {comments?.map((comment:any, i:any) => (
+            <Box key={`${comment.id}-${i}`}>
               <Divider />
-              <Typography sx={{ color: main, m: "0.5rem 0", pl: "1rem" }}>
-                {comment}
-              </Typography>
+              <FlexBetween>
+      <FlexBetween gap="1rem">
+        <UserImage image={userPicturePath} size="55px" />
+        <Box
+          onClick={() => {
+            navigate(`/profile/${comment.commenter}`);
+            navigate(0);
+          }}
+        >
+          <Typography
+            color={main}
+            variant="h5"
+            fontWeight="500"
+            sx={{
+              "&:hover": {
+                color: palette.primary.light,
+                cursor: "pointer",
+              },
+            }}
+          >
+            {"hatem Azaiez"}
+          </Typography>
+          <Typography  fontSize="0.75rem">
+            {comment.text}
+          </Typography>
+        </Box>
+      </FlexBetween>
+      {/* <IconButton
+        // onClick={() => patchFriend()}
+        sx={{ backgroundColor: primaryLight, p: "0.6rem" }}
+      >
+        {isFriend ? (
+          <PersonRemoveOutlined sx={{ color: primaryDark }} />
+        ) : (
+          <PersonAddOutlined sx={{ color: primaryDark }} />
+        )}
+      </IconButton> */}
+    </FlexBetween>
+              
             </Box>
           ))}
-          {comments.length > 0 && <Divider />}
+          {/* {comments?.length > 0 && <Divider />} */}
 
           {/* Add a new comment input */}
           <Box
