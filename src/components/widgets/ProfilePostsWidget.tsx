@@ -103,7 +103,7 @@ const PostsWidget = ({
             name={authorName}
             description={text}
             location={user?.city}
-            picturePath={authorAvatar || "/assets/images/rock.jpg"}
+            picturePath={image!="https://" && image!="" ? image :  "/assets/images/rock.jpg"}
             userPicturePath={
               authorAvatar || "/assets/images/avatar default.png"
             }

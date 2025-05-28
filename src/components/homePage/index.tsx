@@ -118,12 +118,14 @@ const HomePage = () => {
       >
         <Box flexBasis={isNonMobileScreens ? "26%" : undefined}>
           <UserWidget
-            userId={user.address}
-            name={`${user.firstName || ''} ${user.lastName || ''}`}
-            picturePath={user.avatar || ""}
-            city={user.city || ""}
-            country={user.country || ""}
-            bio={user.bio || ""}
+            userId={user?.address ?? ""}
+            name = {user?.firstName+" "+user?.lastName}
+            picturePath={user?.avatar ?? ""}
+            city= {user?.city ?? ""}
+            country= {user?.country ?? ""}
+            bio= {user?.bio ?? ""}
+            telegram= {user?.telegram ?? ""}
+            twitter= {user?.xHandle ?? ""}
           />
         </Box>
         <Box

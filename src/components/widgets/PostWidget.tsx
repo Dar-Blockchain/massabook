@@ -163,7 +163,7 @@ const PostWidget = ({
               },
             }}
           >
-             {comment.commenterName}
+            {comment.commenterName}
           </Typography>
           <Typography  fontSize="0.75rem">
             {comment.text}
