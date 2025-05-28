@@ -1,4 +1,4 @@
-import { Box, useMediaQuery } from "@mui/material";
+import { Box, useMediaQuery, CircularProgress } from "@mui/material";
 import Navbar from "../navbar";
 import UserWidget from "../widgets/UserWidget";
 import MyPostWidget from "../widgets/MyPostWidget";
@@ -7,8 +7,9 @@ import AdvertWidget from "../widgets/SuggestedPagesWidget";
 import FriendListWidget from "../widgets/FriendListWidget";
 import { RootState,AppDispatch } from "../../redux/store";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { fetchFriendsPosts } from "../../redux/slices/userSlice";
+import { getFollowersNBR } from "../../services/getProfile";
 
 // import { checkUserProfile } from "../../redux/slices/userSlice";
  
@@ -16,30 +17,39 @@ import { fetchFriendsPosts } from "../../redux/slices/userSlice";
 const HomePage = () => {
   const isNonMobileScreens = useMediaQuery("(min-width:1000px)");
   const friPosts = useSelector((state: RootState) => state.user.friendsposts);
-  console.log(friPosts," ***********");
-    const dispatch = useDispatch<AppDispatch>();
-  
+  const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.user.user);
   const { currentWallet, connectedAccount } = useSelector(
     (state: RootState) => state.account
   );
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     const fetchProfile = async () => {
       if (connectedAccount) {
         try {
-          // Dispatch the thunk with the user's address.
+          setIsLoading(true);
           await dispatch(
             fetchFriendsPosts(connectedAccount.address)
           ).unwrap();
-          // Now the Redux store's user property is populated.
         } catch (error) {
           console.error("Failed to fetch user profile:", error);
-          // Optionally redirect to profile setup if profile is missing.
+        } finally {
+          setIsLoading(false);
         }
       }
     };
     fetchProfile();
-    }, [currentWallet, connectedAccount]);
+  }, [currentWallet, connectedAccount]);
+
+  if (isLoading || !user) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   // const [isCheckingProfile, setIsCheckingProfile] = useState(false);
   // this is juust mocked data for now
   const posts = [
@@ -108,26 +118,26 @@ const HomePage = () => {
       >
         <Box flexBasis={isNonMobileScreens ? "26%" : undefined}>
           <UserWidget
-            userId={user?.address ?? ""}
-            name = {user?.firstName+" "+user?.lastName}
-            picturePath={user?.avatar ?? ""}
-            city= {user?.city ?? ""}
-            country= {user?.country ?? ""}
-            bio= {user?.bio ?? ""}
+            userId={user.address}
+            name={`${user.firstName || ''} ${user.lastName || ''}`}
+            picturePath={user.avatar || ""}
+            city={user.city || ""}
+            country={user.country || ""}
+            bio={user.bio || ""}
           />
         </Box>
         <Box
           flexBasis={isNonMobileScreens ? "42%" : undefined}
           mt={isNonMobileScreens ? undefined : "2rem"}
         >
-          <MyPostWidget picturePath={user?.avatar ?? ""} />
-          <PostsWidget userId={user?.address} posts={posts} friPosts={friPosts} />
+          <MyPostWidget picturePath={user.avatar || ""} />
+          <PostsWidget userId={user.address} posts={posts} friPosts={friPosts} />
         </Box>
         {isNonMobileScreens && (
           <Box flexBasis="26%">
-            <AdvertWidget />
+            {/* <AdvertWidget /> */}
             <Box m="2rem 0" />
-            <FriendListWidget userId={user?.address} />
+            <FriendListWidget userId={user.address} />
           </Box>
         )}
       </Box>

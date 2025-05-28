@@ -6,7 +6,8 @@ import {
   Serializable,
   bytesToStr,
   Mas,
-  OperationStatus
+  OperationStatus,
+  ArrayTypes
   } from "@massalabs/massa-web3";
 
   export class Profile implements Serializable<Profile> {
@@ -99,39 +100,79 @@ import {
     }
   }
 
-  export class Comment implements Serializable<Comment> {
+export class Comment implements Serializable<Comment> {
+  constructor(
+    public id: bigint = 0n, // Use bigint for u64 values
+    public postId: bigint = 0n, // postId as bigint
+    public commenter: string = '', // Address serialized as string
+    public commenterName: string = '',
+    public commenterAvatar: string = '',
+    public text: string = '',
+    public createdAt: bigint = 0n, // createdAt as bigint
+    public parentId: bigint = 0n, // parentId as bigint
+  ) {}
+
+  // Serialize the Comment object
+  serialize(): Uint8Array {
+    const args = new Args()
+      .addU64(this.id)
+      .addU64(this.postId)
+      .addString(this.commenter) // Address as string
+      .addString(this.text)
+      .addU64(this.createdAt)
+      .addU64(this.parentId)
+      .addString(this.commenterName)
+      .addString(this.commenterAvatar)
+      ;
+
+    return new Uint8Array(args.serialize());
+  }
+
+  // Deserialize the Comment object
+  deserialize(data: Uint8Array, offset: number): DeserializedResult<Comment> {
+    const args = new Args(data, offset);
+
+    this.id = args.nextU64(); // Deserialize id
+    this.postId = args.nextU64(); // Deserialize postId
+    this.commenter = args.nextString(); // Deserialize commenter
+    this.text = args.nextString(); // Deserialize text
+    this.createdAt = args.nextU64(); // Deserialize createdAt
+    this.parentId = args.nextU64(); // Deserialize parentId
+    this.commenterName = args.nextString(); // Deserialize commenterName
+    this.commenterAvatar = args.nextString(); // Deserialize commenterAvatar
+
+    return { instance: this, offset: args.getOffset() };
+  }
+  }
+
+  export class Like implements Serializable<Like> {
     constructor(
       public id: bigint = 0n, // Use bigint for u64 values
-      public postId: bigint = 0n, // postId as bigint
-      public commenter: string = '', // Address serialized as string
-      public text: string = '',
+      public userAddress: string = '', // postId as bigint
+      public postId: bigint = 0n, // Address serialized as string
       public createdAt: bigint = 0n, // createdAt as bigint
-      public parentId: bigint = 0n, // parentId as bigint
+     
     ) {}
   
     // Serialize the Comment object
     serialize(): Uint8Array {
       const args = new Args()
         .addU64(this.id)
+        .addString(this.userAddress) 
         .addU64(this.postId)
-        .addString(this.commenter) // Address as string
-        .addString(this.text)
         .addU64(this.createdAt)
-        .addU64(this.parentId);
   
       return new Uint8Array(args.serialize());
     }
   
     // Deserialize the Comment object
-    deserialize(data: Uint8Array, offset: number): DeserializedResult<Comment> {
+    deserialize(data: Uint8Array, offset: number): DeserializedResult<Like> {
       const args = new Args(data, offset);
   
-      this.id = args.nextU64(); // Deserialize id
+      this.id = args.nextU64(); 
+      this.userAddress = args.nextString(); 
       this.postId = args.nextU64(); // Deserialize postId
-      this.commenter = args.nextString(); // Deserialize commenter
-      this.text = args.nextString(); // Deserialize text
       this.createdAt = args.nextU64(); // Deserialize createdAt
-      this.parentId = args.nextU64(); // Deserialize parentId
   
       return { instance: this, offset: args.getOffset() };
     }
@@ -230,15 +271,15 @@ export async function getUserPosts(userAddress : any,profileAddress: any,connect
 }
 
 export async function followProfile(profileAddress: any,connectedAccount : any,followUserAddress: any){
-   
+  const factoryAddress =
+  import.meta.env.VITE_FACTORY_ADDRESS 
   const userContract = new SmartContract(
       connectedAccount,
-      profileAddress
+      factoryAddress
     );
-    const userProfile:any = await getContractAddressForUser(followUserAddress,connectedAccount);
     const operation = await userContract.call(
-      'followProfile',
-      new Args().addString(userProfile).addString(followUserAddress).serialize(),
+      'following',
+      new Args().addString(connectedAccount.address).addString(followUserAddress).serialize(),
       {
         coins: Mas.fromString('0.02'),
       },
@@ -260,13 +301,15 @@ export async function commentPost(connectedAccount : any,ownerComment: any,text:
    
  
     const userProfile:any = await getContractAddressForUser(ownerComment,connectedAccount);
+    const commenterProfile:any = await getContractAddressForUser(connectedAccount.address,connectedAccount);
+
     const userContract = new SmartContract(
       connectedAccount,
       userProfile
     );
     const operation = await userContract.call(
       'addPostComment',
-      new Args().addU64(postID).addString(text).serialize(),
+      new Args().addU64(postID).addString(text).addString(commenterProfile).serialize(),
       {
         coins: Mas.fromString('0.02'),
       },
@@ -283,7 +326,33 @@ export async function commentPost(connectedAccount : any,ownerComment: any,text:
     
    
 }
-
+export async function likePost(connectedAccount : any,ownerComment: any,postID:any){
+   
+ 
+  const userProfile:any = await getContractAddressForUser(ownerComment,connectedAccount);
+  const userContract = new SmartContract(
+    connectedAccount,
+    userProfile
+  );
+  const operation = await userContract.call(
+    'likePost',
+    new Args().addU64(postID).addString(connectedAccount.address).serialize(),
+    {
+      coins: Mas.fromString('0.02'),
+    },
+  );
+  const operationStatus = await operation.waitFinalExecution();
+  console.log('Operation :'+operation)
+  if (operationStatus === OperationStatus.Success) {
+    console.log('User followed successfully');
+    return true;
+  } else {
+    console.error('Operation failed with status:', operationStatus);
+    return false;
+  }
+  
+ 
+}
 
 export async function getPostComments(connectedAccount : any,ownerComment: any, postId: any) {
   const userProfile:any = await getContractAddressForUser(ownerComment,connectedAccount);
@@ -300,7 +369,46 @@ export async function getPostComments(connectedAccount : any,ownerComment: any, 
   const deserializedComments = new Args(
     result.value,
   ).nextSerializableObjectArray<Comment>(Comment);
-
+  
   console.log(`Post ${postId} comments :`, deserializedComments);
   return deserializedComments;
+}
+
+export async function getFollowersNBR(connectedAccount : any,userAddress: any) {
+  const factoryAddress =
+    import.meta.env.VITE_FACTORY_ADDRESS 
+  const userContract = new SmartContract(
+    connectedAccount,
+    factoryAddress
+  );
+  const result = await userContract.read(
+    'getFollowers',
+    new Args().addString(userAddress).serialize(),
+  );
+
+  const nbFollowers = new Args(
+    result.value,
+  ).nextU64();
+  
+  console.log(`****** ${connectedAccount.address} ***** :`, nbFollowers.toString());
+  return nbFollowers;
+}
+export async function getLikesofPost(connectedAccount : any,ownerComment: any, postId: any) {
+  const userProfile:any = await getContractAddressForUser(ownerComment,connectedAccount);
+  console.log(`Getting address ${userProfile} comments`);
+  const userContract = new SmartContract(
+    connectedAccount,
+    userProfile
+  );
+  const result = await userContract.read(
+    'getPostLikedUsers',
+    new Args().addU64(postId).serialize(),
+  );
+console.log(result.value)
+const deserializedUsers = new Args(result.value).nextArray<string>(
+  ArrayTypes.STRING,
+);
+
+  console.log(`Like of post ${postId} comments :`, deserializedUsers);
+  return deserializedUsers;
 }

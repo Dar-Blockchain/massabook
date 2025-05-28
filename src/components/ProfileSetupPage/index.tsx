@@ -12,6 +12,11 @@ import {
   Chip,
   FormHelperText,
   Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -41,6 +46,8 @@ const ProfileSetupPage = () => {
   const { palette } = useTheme();
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [topicsError, setTopicsError] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [countdown, setCountdown] = useState(30);
 
   const suggestedTopics = [
     "Blockchain Fundamentals",
@@ -120,15 +127,12 @@ const ProfileSetupPage = () => {
       return;
     }
 
-    console.log("avatar base64", avatarURL);
-
     const profileData = new Profile(
       connectedAccount.address,
       firstName,
       lastName,
       avatarURL,
       bio,
-
       country,
       city,
       telegram,
@@ -144,8 +148,17 @@ const ProfileSetupPage = () => {
         error: "Failed to save profile.",
       });
 
-      window.location.href = "/home";
-      // navigate("/home");
+      setIsModalOpen(true);
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            window.location.href = "/home";
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch (error) {
       console.error("Error saving profile:", error);
     } finally {
@@ -168,6 +181,20 @@ const ProfileSetupPage = () => {
       >
         <CircularProgress color="inherit" />
       </Backdrop>
+
+      <Dialog 
+        open={isModalOpen} 
+        onClose={() => {}} 
+        disableEscapeKeyDown
+      >
+        <DialogTitle>Profile Creation In Progress</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Your profile is being created on the blockchain. This may take a few moments.
+            You will be automatically redirected to the home page in {countdown} seconds.
+          </DialogContentText>
+        </DialogContent>
+      </Dialog>
 
       <Navbar />
 

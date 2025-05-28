@@ -15,11 +15,11 @@ import {
   Button,
 } from "@mui/material";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import WidgetWrapper from "../WidgetWrapper";
 import Friend from "../Friend";
 import FlexBetween from "../FlexBetween";
-import { commentPost, getPostComments } from "../../services/getProfile";
+import { commentPost, getLikesofPost, getPostComments, likePost } from "../../services/getProfile";
 import { useSelector } from "react-redux";
 import { RootState } from "../../redux/store";
 import UserImage from "../UserImage";
@@ -51,7 +51,7 @@ const PostWidget = ({
 
   const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState<any>(null);
-
+  const [likesCount, setLikesCount] = useState(0);
 
   const isLiked = true;
   const likeCount = 5;
@@ -63,11 +63,22 @@ const PostWidget = ({
 
   const main = palette.neutral.main;
   const primary = palette.primary.main;
-
+  
   const handleAddComment = async() => {
     const resp = await commentPost(connectedAccount,postUserId,newComment,postId)
     setNewComment("");
   };
+  useEffect(() => {
+    const getLikes = async() => {
+      const _likes = await getLikesofPost(connectedAccount,postUserId,postId)
+      console.log(_likes,"likes")
+      setLikesCount(_likes.length)
+    }
+    getLikes()
+  },[connectedAccount])
+  const handleLikes = async() => {
+    await likePost(connectedAccount,postUserId,postId)
+  }
   const handlegetCommants = async() => {
     if(!isComments){  
       console.log(connectedAccount,"77777777777777")
@@ -104,41 +115,26 @@ const PostWidget = ({
       <FlexBetween mt="0.25rem">
         <FlexBetween gap="1rem">
           <FlexBetween gap="0.3rem">
-            <IconButton>
+            <IconButton onClick={() => handleLikes()}>
               {isLiked ? (
                 <FavoriteOutlined sx={{ color: primary }} />
               ) : (
                 <FavoriteBorderOutlined />
               )}
             </IconButton>
-            <Typography>{likeCount}</Typography>
+            <Typography>{likesCount}</Typography>
           </FlexBetween>
 
           <FlexBetween gap="0.3rem">
             <IconButton onClick={() => handlegetCommants()}>
               <ChatBubbleOutlineOutlined />
             </IconButton>
-            {/* <Typography>{comments?.length}</Typography> */}
-            <IconButton>
-              {/* Repost/Forward Icon */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24px"
-                height="24px"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fill="currentColor"
-                  d="M5 4a2 2 0 0 0-2 2v6H0l4 4l4-4H5V6h7l2-2zm10 4h-3l4-4l4 4h-3v6a2 2 0 0 1-2 2H6l2-2h7z"
-                ></path>
-              </svg>
-            </IconButton>
+            <Typography>{comments?.length}</Typography> 
+          
           </FlexBetween>
         </FlexBetween>
 
-        <IconButton>
-          <ShareOutlined />
-        </IconButton>
+       
       </FlexBetween>
 
       {/* Smooth transition for comments and input field */}
@@ -149,7 +145,7 @@ const PostWidget = ({
               <Divider />
               <FlexBetween>
       <FlexBetween gap="1rem">
-        <UserImage image={userPicturePath} size="55px" />
+        <UserImage image={comment.commenterAvatar} size="55px" />
         <Box
           onClick={() => {
             navigate(`/profile/${comment.commenter}`);
@@ -167,7 +163,7 @@ const PostWidget = ({
               },
             }}
           >
-            {"hatem Azaiez"}
+             {comment.commenterName}
           </Typography>
           <Typography  fontSize="0.75rem">
             {comment.text}

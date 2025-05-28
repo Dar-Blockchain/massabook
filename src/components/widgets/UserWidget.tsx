@@ -23,6 +23,8 @@ import FlexBetween from "../FlexBetween";
 import UserImage from "../UserImage";
 import { useSelector } from "react-redux";
 import { RootState } from "../../redux/store";
+import { useEffect, useState } from "react";
+import { getFollowersNBR } from "../../services/getProfile";
 
 type UserWidgetProps = {
   userId: string;
@@ -34,7 +36,25 @@ type UserWidgetProps = {
 };
 
 const UserWidget = ({ userId, picturePath,name,city,country ,bio}: UserWidgetProps) => {
-  // const [user, setUser] = useState(null);
+  console.log(userId,"aaaaaaaaaqqqq");
+  const [NbFollows, setNbFollows] = useState(0);
+  const { currentWallet, connectedAccount } = useSelector(
+    (state: RootState) => state.account
+  );
+  useEffect(() => {
+    const fetchNBFollowers = async () => {
+      if (userId && connectedAccount) {
+        try {
+          const nbr = await getFollowersNBR(connectedAccount,userId);
+          setNbFollows(Number(nbr));
+        } catch (error) {
+          console.error("Failed to fetch user profile:", error);
+          // Optionally redirect to profile setup if profile is missing.
+        }
+      }
+    };
+    fetchNBFollowers();
+    }, [userId,connectedAccount]);
   const { palette } = useTheme();
   const navigate = useNavigate();
   // const token = useSelector((state: RootState) => state.token);
@@ -80,7 +100,7 @@ const UserWidget = ({ userId, picturePath,name,city,country ,bio}: UserWidgetPro
             >
               {name}
             </Typography>
-            <Typography color={medium}>{friends.length} friends</Typography>
+            {/* <Typography color={medium}>{friends.length} friends</Typography> */}
           </Box>
         </FlexBetween>
         {/* <IconButton
@@ -114,13 +134,7 @@ const UserWidget = ({ userId, picturePath,name,city,country ,bio}: UserWidgetPro
         <FlexBetween mb="0.5rem">
           <Typography color={medium}>Total Followers</Typography>
           <Typography color={main} fontWeight="500">
-            250
-          </Typography>
-        </FlexBetween>
-        <FlexBetween>
-          <Typography color={medium}>Communities Joined</Typography>
-          <Typography color={main} fontWeight="500">
-            8
+            {NbFollows}
           </Typography>
         </FlexBetween>
       </Box>
@@ -152,12 +166,12 @@ const UserWidget = ({ userId, picturePath,name,city,country ,bio}: UserWidgetPro
               </Typography>
             </Box>
           </FlexBetween>
-          <IconButton
+          {/* <IconButton
             onClick={() => navigate(`/update-profile`)}
             sx={{ cursor: "pointer" }}
           >
             <EditOutlined sx={{ color: main }} />
-          </IconButton>
+          </IconButton> */}
         </FlexBetween>
 
         <FlexBetween gap="1rem">
@@ -174,44 +188,18 @@ const UserWidget = ({ userId, picturePath,name,city,country ,bio}: UserWidgetPro
               </Typography>
             </Box>
           </FlexBetween>
-          <IconButton
+          {/* <IconButton
             onClick={() => navigate(`/update-profile`)}
             sx={{ cursor: "pointer" }}
           >
             <EditOutlined sx={{ color: main }} />
-          </IconButton>
+          </IconButton> */}
         </FlexBetween>
       </Box>
       <Divider />
 
       {/* FIFTH ROW - Create Page CTA */}
-      <Box p="1rem 0">
-        <Typography
-          fontSize="1rem"
-          color={main}
-          fontWeight="500"
-          mb="0.5rem"
-          textAlign="left"
-        >
-          Grow Your Presence
-        </Typography>
-        <Button
-          // variant="contained"
-          // color="primary"
-          // startIcon={<AddCircleOutline />}
-          onClick={() => navigate("/create-page")}
-          // fullWidth
-          sx={{
-            textTransform: "none",
-            color: palette.background.alt,
-            backgroundColor: palette.primary.main,
-            borderRadius: "8px",
-          }}
-        >
-          <AddCircleOutline sx={{ marginRight: "5px" }} />
-          Create a New Page
-        </Button>
-      </Box>
+     
     </WidgetWrapper>
   );
 };
