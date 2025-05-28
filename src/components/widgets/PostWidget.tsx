@@ -149,7 +149,7 @@ const PostWidget = ({
               <Divider />
               <FlexBetween>
       <FlexBetween gap="1rem">
-        <UserImage image={userPicturePath} size="55px" />
+        <UserImage image={comment.commenterAvatar} size="55px" />
         <Box
           onClick={() => {
             navigate(`/profile/${comment.commenter}`);
@@ -167,7 +167,7 @@ const PostWidget = ({
               },
             }}
           >
-            {"hatem Azaiez"}
+            {comment.commenterName}
           </Typography>
           <Typography  fontSize="0.75rem">
             {comment.text}

@@ -31,9 +31,11 @@ type UserWidgetProps = {
   city:string;
   country:string;
   bio:string;
+  telegram:string;
+  twitter:string;
 };
 
-const UserWidget = ({ userId, picturePath,name,city,country ,bio}: UserWidgetProps) => {
+const UserWidget = ({ userId, picturePath,name,city,country ,bio,telegram,twitter}: UserWidgetProps) => {
   // const [user, setUser] = useState(null);
   const { palette } = useTheme();
   const navigate = useNavigate();
@@ -148,7 +150,7 @@ const UserWidget = ({ userId, picturePath,name,city,country ,bio}: UserWidgetPro
                 X
               </Typography>
               <Typography color={medium}>
-                {user?.xHandle || "No X account"}
+                {twitter || "No X account"}
               </Typography>
             </Box>
           </FlexBetween>
@@ -170,7 +172,7 @@ const UserWidget = ({ userId, picturePath,name,city,country ,bio}: UserWidgetPro
               </Typography>
               <Typography color={medium}>
                 {" "}
-                {user?.telegram || "No Telegram account"}{" "}
+                {telegram || "No Telegram account"}{" "}
               </Typography>
             </Box>
           </FlexBetween>

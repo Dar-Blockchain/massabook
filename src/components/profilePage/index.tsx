@@ -60,7 +60,7 @@ const ProfilePage = () => {
           justifyContent="center"
         >
           <Box flexBasis={isNonMobileScreens ? "26%" : undefined}>
-            <UserWidget userId={profile.address} picturePath={profile.avatar} name={profile.firstName + " " + profile.lastName} city={profile.city} country={profile.country} bio={profile.bio}/>
+            <UserWidget userId={profile.address} picturePath={profile.avatar} name={profile.firstName + " " + profile.lastName} city={profile.city} country={profile.country} bio={profile.bio} telegram={profile.telegram} twitter={profile.xHandle}/>
             <Box m="2rem 0" />
             <FriendListWidget userId={user.address} />
           </Box>

@@ -114,6 +114,8 @@ const HomePage = () => {
             city= {user?.city ?? ""}
             country= {user?.country ?? ""}
             bio= {user?.bio ?? ""}
+            telegram= {user?.telegram ?? ""}
+            twitter= {user?.xHandle ?? ""}
           />
         </Box>
         <Box
