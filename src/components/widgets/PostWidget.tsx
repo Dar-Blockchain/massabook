@@ -3,6 +3,7 @@ import {
   FavoriteBorderOutlined,
   FavoriteOutlined,
   ShareOutlined,
+  DeleteOutlined,
 } from "@mui/icons-material";
 import {
   Box,
@@ -19,7 +20,7 @@ import { useEffect, useState } from "react";
 import WidgetWrapper from "../WidgetWrapper";
 import Friend from "../Friend";
 import FlexBetween from "../FlexBetween";
-import { commentPost, getLikesofPost, getPostComments, likePost } from "../../services/getProfile";
+import { commentPost, getLikesofPost, getFactoryPostComments, likePost, testDeletePost } from "../../services/getProfile";
 import { useSelector } from "react-redux";
 import { RootState } from "../../redux/store";
 import UserImage from "../UserImage";
@@ -34,7 +35,7 @@ type PostWidgetProps = {
   picturePath: string;
   userPicturePath: string;
   likes: Record<string, boolean>;
-  comments: string[];
+  comments: number;
 };
 
 const PostWidget = ({
@@ -46,11 +47,12 @@ const PostWidget = ({
   picturePath,
   userPicturePath,
   likes,
+  comments,
 }: PostWidgetProps) => {
   const [isComments, setIsComments] = useState(false);
 
   const [newComment, setNewComment] = useState("");
-  const [comments, setComments] = useState<any>(null);
+  const [fetchedComments, setFetchedComments] = useState<any>(null);
   const [likesCount, setLikesCount] = useState(0);
 
   const isLiked = true;
@@ -79,12 +81,32 @@ const PostWidget = ({
   const handleLikes = async() => {
     await likePost(connectedAccount,postUserId,postId)
   }
+  const handleDeletePost = async() => {
+    try {
+      if (!connectedAccount) {
+        console.error('No connected account');
+        return;
+      }
+      
+      const success = await testDeletePost(connectedAccount, BigInt(postId));
+      if (success) {
+        console.log('Post deleted successfully');
+        // You might want to trigger a refresh of posts here
+        window.location.reload(); // Simple refresh, consider using a more elegant state update
+      }
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+    }
+  }
   const handlegetCommants = async() => {
     if(!isComments){  
       console.log(connectedAccount,"77777777777777")
-    const _comments = await getPostComments(connectedAccount,postUserId, postId);
+      console.log(postUserId,"postUserId")
+      console.log(postId,"postId")
+
+    const _comments = await getFactoryPostComments(connectedAccount,postUserId, BigInt(postId));
     console.log(_comments);
-    setComments(_comments);
+    setFetchedComments(_comments);
     setIsComments(true);
     }
     else{
@@ -129,18 +151,31 @@ const PostWidget = ({
             <IconButton onClick={() => handlegetCommants()}>
               <ChatBubbleOutlineOutlined />
             </IconButton>
-            <Typography>{comments?.length}</Typography> 
+            <Typography>{fetchedComments ? fetchedComments.length : comments}</Typography> 
           
           </FlexBetween>
         </FlexBetween>
 
-       
+        {/* Show delete button only for post owner */}
+        {connectedAccount?.address === postUserId && (
+          <IconButton 
+            onClick={handleDeletePost}
+            sx={{ 
+              color: palette.neutral.medium,
+              "&:hover": {
+                color: palette.error.main,
+              }
+            }}
+          >
+            <DeleteOutlined />
+          </IconButton>
+        )}
       </FlexBetween>
 
       {/* Smooth transition for comments and input field */}
       <Collapse in={isComments} timeout="auto" unmountOnExit>
         <Box mt="0.5rem">
-          {comments?.map((comment:any, i:any) => (
+          {fetchedComments?.map((comment:any, i:any) => (
             <Box key={`${comment.id}-${i}`}>
               <Divider />
               <FlexBetween>

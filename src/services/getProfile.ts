@@ -1,4 +1,3 @@
-
 import {
     Args,
     SmartContract,
@@ -7,7 +6,8 @@ import {
   bytesToStr,
   Mas,
   OperationStatus,
-  ArrayTypes
+  ArrayTypes,
+  Operation
   } from "@massalabs/massa-web3";
 
   export class Profile implements Serializable<Profile> {
@@ -59,21 +59,24 @@ import {
   }
   export class Post implements Serializable<Post> {
     constructor(
-      public id: bigint = 0n,
-      public author: string = "",
+      public id: bigint = 0n, // Use bigint to handle u64 values in JavaScript
+      public author: string = '', // Address serialized as string
       public authorName: string = '',
       public authorAvatar: string = '',
-      public text: string = "",
-      public image: string = "",
+      public text: string = '',
+      public image: string = '',
       public isRepost: boolean = false,
-      public repostedPostId: bigint = 0n,
-      public createdAt: bigint = 0n
+      public repostedPostId: bigint = 0n, // Use bigint for u64 values
+      public createdAt: bigint = 0n, // Use bigint for timestamp
+      public likesNbr: bigint = 0n, // Use bigint for u64 values
+      public commentNbr: bigint = 0n, // Use bigint for u64 values
     ) {}
   
+    // Serialize the Post object for sending to the backend
     serialize(): Uint8Array {
-      return new Args()
+      const args = new Args()
         .addU64(this.id)
-        .addString(this.author) // Serialize the author's profile
+        .addString(this.author) // Author as a string
         .addString(this.authorName)
         .addString(this.authorAvatar)
         .addString(this.text)
@@ -81,24 +84,32 @@ import {
         .addBool(this.isRepost)
         .addU64(this.repostedPostId)
         .addU64(this.createdAt)
-        .serialize();
+        .addU64(this.likesNbr)
+        .addU64(this.commentNbr);
+  
+      return new Uint8Array(args.serialize());
     }
   
+    // Deserialize the data received from the backend
     deserialize(data: Uint8Array, offset: number): DeserializedResult<Post> {
       const args = new Args(data, offset);
-      this.id = args.nextU64();
-      this.author = args.nextString();
-      this.authorName = args.nextString();
-      this.authorAvatar = args.nextString();
-      this.text = args.nextString();
-      this.image = args.nextString();
-      this.isRepost = args.nextBool();
-      this.repostedPostId = args.nextU64();
-      this.createdAt = args.nextU64();
+  
+      this.id = args.nextU64(); // Deserialize id as bigint
+      this.author = args.nextString(); // Deserialize author
+      this.authorName = args.nextString(); // Deserialize authorName
+      this.authorAvatar = args.nextString(); // Deserialize authorAvatar
+      this.text = args.nextString(); // Deserialize text
+      this.image = args.nextString(); // Deserialize image
+      this.isRepost = args.nextBool(); // Deserialize isRepost
+      this.repostedPostId = args.nextU64(); // Deserialize repostedPostId as bigint
+      this.createdAt = args.nextU64(); // Deserialize createdAt as bigint
+      this.likesNbr = args.nextU64(); // Deserialize likesNbr as bigint
+      this.commentNbr = args.nextU64(); // Deserialize commentNbr as bigint
   
       return { instance: this, offset: args.getOffset() };
     }
   }
+  
 
   export class Comment implements Serializable<Comment> {
     constructor(
@@ -122,7 +133,10 @@ import {
         .addString(this.commenterAvatar)
         .addString(this.text)
         .addU64(this.createdAt)
-        .addU64(this.parentId);
+        .addU64(this.parentId)
+        .addString(this.commenterName)
+        .addString(this.commenterAvatar)
+        ;
   
       return new Uint8Array(args.serialize());
     }
@@ -139,10 +153,15 @@ import {
       this.text = args.nextString(); // Deserialize text
       this.createdAt = args.nextU64(); // Deserialize createdAt
       this.parentId = args.nextU64(); // Deserialize parentId
+      this.commenterName = args.nextString(); // Deserialize commenterName
+      this.commenterAvatar = args.nextString(); // Deserialize commenterAvatar
   
       return { instance: this, offset: args.getOffset() };
     }
   }
+
+
+
 export async function getContractAddressForUser(address: any,connectedAccount : any){
   console.log(connectedAccount,"zzzzzzz")
     const factoryAddress =
@@ -265,32 +284,43 @@ export async function followProfile(profileAddress: any,connectedAccount : any,f
 
 export async function commentPost(connectedAccount : any,ownerComment: any,text:any,postID:any){
    
- 
-    const userProfile:any = await getContractAddressForUser(ownerComment,connectedAccount);
-    const commenterProfile:any = await getContractAddressForUser(connectedAccount.address,connectedAccount);
-
-    const userContract = new SmartContract(
-      connectedAccount,
-      userProfile
-    );
-    const operation = await userContract.call(
-      'addPostComment',
-      new Args().addU64(postID).addString(text).addString(commenterProfile).serialize(),
-      {
-        coins: Mas.fromString('0.02'),
-      },
-    );
-    const operationStatus = await operation.waitFinalExecution();
-    console.log('Operation :'+operation)
-    if (operationStatus === OperationStatus.Success) {
-      console.log('User followed successfully');
-      return true;
-    } else {
-      console.error('Operation failed with status:', operationStatus);
+    try {
+      console.log('Adding comment through factory contract...');
+      
+      // Get the factory contract address
+      const factoryAddress = import.meta.env.VITE_FACTORY_ADDRESS ||
+        "AS12EyXkBNw1eFmEfS7QQBfZfbdCTq2kRQN1PUe3HREJb3ZF5YocV";
+      
+      const factoryContract = new SmartContract(
+        connectedAccount,
+        factoryAddress
+      );
+      
+      // Use the factory contract pattern - simpler arguments
+      const args = new Args()
+        .addU64(BigInt(postID))
+        .addString(text)
+        .addString(ownerComment) // postAuthorAddress
+        .addString(connectedAccount.address); // commenterAddress
+      
+      const operation = await factoryContract.call('addPostComment', args.serialize(), {
+        coins: Mas.fromString('0.1'),
+      });
+      
+      const operationStatus = await operation.waitFinalExecution();
+      console.log('Factory comment operation:', operation);
+      
+      if (operationStatus === OperationStatus.Success) {
+        console.log('Factory comment added successfully');
+        return true;
+      } else {
+        console.error('Factory add comment operation failed with status:', operationStatus);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error adding comment through factory:', error);
       return false;
     }
-    
-   
 }
 export async function likePost(connectedAccount : any,ownerComment: any,postID:any){
    
@@ -321,23 +351,37 @@ export async function likePost(connectedAccount : any,ownerComment: any,postID:a
 }
 
 export async function getPostComments(connectedAccount : any,ownerComment: any, postId: any) {
-  const userProfile:any = await getContractAddressForUser(ownerComment,connectedAccount);
-  console.log(`Getting address ${userProfile} comments`);
-  const userContract = new SmartContract(
-    connectedAccount,
-    userProfile
-  );
-  const result = await userContract.read(
-    'getPostComments',
-    new Args().addU64(postId).serialize(),
-  );
-
-  const deserializedComments = new Args(
-    result.value,
-  ).nextSerializableObjectArray<Comment>(Comment);
+  console.log('Getting comments through factory for post ID:', postId, 'by author:', ownerComment);
   
-  console.log(`Post ${postId} comments :`, deserializedComments);
-  return deserializedComments;
+    // Get the factory contract address
+    const factoryAddress = import.meta.env.VITE_FACTORY_ADDRESS ||
+      "AS12EyXkBNw1eFmEfS7QQBfZfbdCTq2kRQN1PUe3HREJb3ZF5YocV";
+    const factoryContract = new SmartContract(
+      connectedAccount,
+      factoryAddress
+    );
+    
+    // Use the factory contract pattern
+    const args = new Args()
+      .addString(ownerComment) // postAuthorAddress
+      .addU64(BigInt(postId)); // postId
+    
+    const result = await factoryContract.read('getPostComments', args.serialize());
+
+    // Check if there's any data returned
+    if (result.info.error) {
+      throw new Error(result.info.error);
+    }
+  
+
+      const deserializedComments = new Args(
+        result.value,
+      ).nextSerializableObjectArray<Comment>(Comment);
+      
+      console.log('Factory Post Comments:', deserializedComments);
+      return deserializedComments;
+ 
+ 
 }
 
 export async function getFollowersNBR(connectedAccount : any,userAddress: any) {
@@ -377,4 +421,135 @@ const deserializedUsers = new Args(result.value).nextArray<string>(
 
   console.log(`Like of post ${postId} comments :`, deserializedUsers);
   return deserializedUsers;
+}
+
+// Test function for updating profile on blockchain (reference implementation)
+export async function testUpdateProfile(
+  contract: SmartContract,
+  address: string,
+  firstName: string,
+  lastName: string,
+  bio: string,
+  avatar: string,
+  country: string,
+  city: string,
+  telegram: string,
+  xHandle: string
+): Promise<boolean> {
+  console.log('Testing updateProfile...');
+  
+  // Create a Profile object with updated information
+  const updatedProfile = new Profile(
+    address,
+    firstName,
+    lastName,
+    avatar,
+    bio,
+    country,
+    city,
+    telegram,
+    xHandle
+  );
+
+  const args = new Args().addSerializable(updatedProfile);
+  
+  const operation: Operation = await contract.call('updateProfile', args.serialize(), {
+    coins: Mas.fromString('0.1'),
+  });
+  
+  const operationStatus = await operation.waitFinalExecution();
+  
+  if (operationStatus === OperationStatus.Success) {
+    console.log('Profile updated successfully');
+    return true;
+  } else {
+    console.error('Update profile operation failed with status:', operationStatus);
+    return false;
+  }
+}
+
+// Factory contract test functions (reference implementations)
+export async function testFactoryAddComment(
+  factoryContract: SmartContract,
+  postId: bigint,
+  text: string,
+  postAuthorAddress: string,
+  commenterAddress: string
+): Promise<boolean> {
+  console.log('Testing factory addPostComment...');
+  
+  const args = new Args()
+    .addU64(postId)
+    .addString(text)
+    .addString(postAuthorAddress)
+    .addString(commenterAddress);
+  
+  const operation: Operation = await factoryContract.call('addPostComment', args.serialize(), {
+    coins: Mas.fromString('0.1'),
+  });
+  
+  const operationStatus = await operation.waitFinalExecution();
+  
+  if (operationStatus === OperationStatus.Success) {
+    console.log('Factory comment added successfully');
+    return true;
+  } else {
+    console.error('Factory add comment operation failed with status:', operationStatus);
+    return false;
+  }
+}
+
+export async function getFactoryPostComments(connectedAccount: any,  postAuthorAddress: string,
+  postId: bigint
+) {
+  console.log('Getting comments through factory for post ID:', postId, 'by author:', postAuthorAddress);
+  const factoryAddress =
+    import.meta.env.VITE_FACTORY_ADDRESS
+  console.log("factoryAddress",factoryAddress)
+  const factoryContract = new SmartContract(connectedAccount, factoryAddress);
+  const args = new Args()
+    .addString(postAuthorAddress)
+    .addU64(postId);
+  
+  const result = await factoryContract.read('getPostComments', args.serialize());
+
+  const deserializedComments = new Args(
+    result.value,
+  ).nextSerializableObjectArray<Comment>(Comment);
+
+  console.log('Factory Post Comments:', deserializedComments);
+  return deserializedComments;
+}
+
+export async function testDeletePost(
+  connectedAccount: any,
+  postId: bigint
+): Promise<boolean> {
+  console.log('Testing deletePost for post ID:', postId);
+  
+  const profile1Address = await getContractAddressForUser(connectedAccount.address, connectedAccount);
+  
+  if (!profile1Address) {
+    console.error('Profile address not found');
+    return false;
+  }
+  
+  const cont1 = new SmartContract(connectedAccount, profile1Address);
+  
+  const args = new Args().addU64(postId);
+  
+  const operation: Operation = await cont1.call('deletePost', args.serialize(), {
+    coins: Mas.fromString('0.1'),
+  });
+  
+  console.log('Delete operation ID:', operation.id);
+  const operationStatus = await operation.waitFinalExecution();
+  
+  if (operationStatus === OperationStatus.Success) {
+    console.log('DeletePost executed successfully');
+    return true;
+  } else {
+    console.error('DeletePost operation failed with status:', operationStatus);
+    return false;
+  }
 }

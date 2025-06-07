@@ -95,6 +95,7 @@ const PostsWidget = ({
           userPicturePath,
           likes,
           comments,
+          commentNbr,
         }) => (
           <PostWidget
             key={id}
@@ -108,7 +109,7 @@ const PostsWidget = ({
               authorAvatar || "/assets/images/avatar default.png"
             }
             likes={likes || { "1": true }}
-            comments={comments || []}
+            comments={Number(commentNbr) }
           />
         )
       )}

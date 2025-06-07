@@ -10,7 +10,7 @@ import {
   Grid,
   useTheme,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   // createUserAccount,
@@ -19,7 +19,6 @@ import {
 } from "../../redux/slices/userSlice";
 import { AppDispatch, RootState } from "../../redux/store";
 import { toast } from "react-toastify";
-import { useDropzone } from "react-dropzone";
 // import { useNavigate } from "react-router-dom";
 import Navbar from "../navbar";
 import WidgetWrapper from "../WidgetWrapper";
@@ -52,30 +51,6 @@ const UpdateProfilePage = () => {
     }
   }, [user]);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setAvatarBase64(result);
-    };
-    reader.onerror = (error) => {
-      console.error("Error reading file:", error);
-      toast.error("Failed to read the selected image.");
-    };
-    reader.readAsDataURL(file);
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      "image/*": [],
-    },
-    multiple: false,
-  });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -85,7 +60,7 @@ const UpdateProfilePage = () => {
     }
 
     if (!avatarBase64) {
-      toast.error("Please upload an avatar image before saving.");
+      toast.error("Please enter an avatar image URL before saving.");
       return;
     }
 
@@ -238,47 +213,51 @@ const UpdateProfilePage = () => {
 
                 {/* Right Column */}
                 <Grid item xs={12} md={6}>
-                  {/* Dropzone area for avatar upload */}
-                  <Box
-                    {...getRootProps()}
+                  {/* Avatar URL input */}
+                  <TextField
+                    label="Avatar Image URL"
+                    fullWidth
+                    required
+                    value={avatarBase64 || ""}
+                    onChange={(e) => setAvatarBase64(e.target.value)}
+                    margin="normal"
+                    placeholder="https://example.com/avatar.jpg"
                     sx={{
-                      border: "2px dashed #ccc",
-                      borderRadius: "8px",
-                      padding: "1rem",
-                      textAlign: "center",
-                      cursor: "pointer",
-                      my: "1rem",
-                      backgroundColor: isDragActive
-                        ? "#f0f0f0"
-                        : palette.mode === "dark"
-                        ? "#333"
-                        : "#fff",
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "8px",
+                      },
                     }}
-                  >
-                    <input {...getInputProps()} />
-                    {avatarBase64 ? (
-                      <Box>
-                        <Typography variant="body1" mb={1}>
-                          Image selected:
-                        </Typography>
-                        <img
-                          src={avatarBase64}
-                          alt="Selected avatar"
-                          style={{
-                            maxWidth: "100%",
-                            height: "auto",
-                            borderRadius: "8px",
-                          }}
-                        />
-                      </Box>
-                    ) : (
-                      <Typography variant="body1" color="textSecondary">
-                        {isDragActive
-                          ? "Drop the image here..."
-                          : "Drag & drop an avatar image, or click to select"}
+                  />
+
+                  {/* Image preview */}
+                  {avatarBase64 && (
+                    <Box
+                      sx={{
+                        mt: 1,
+                        mb: 2,
+                        textAlign: "center",
+                        border: "1px solid #ccc",
+                        borderRadius: "8px",
+                        padding: "1rem",
+                      }}
+                    >
+                      <Typography variant="body2" mb={1}>
+                        Avatar Preview:
                       </Typography>
-                    )}
-                  </Box>
+                      <img
+                        src={avatarBase64}
+                        alt="Avatar preview"
+                        style={{
+                          maxWidth: "200px",
+                          maxHeight: "200px",
+                          borderRadius: "8px",
+                        }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </Box>
+                  )}
 
                   <TextField
                     label="Telegram"

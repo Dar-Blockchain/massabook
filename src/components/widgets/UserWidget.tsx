@@ -1,12 +1,8 @@
 import {
-  ManageAccountsOutlined,
   EditOutlined,
   LocationOnOutlined,
-  WorkOutlineOutlined,
   Telegram,
   X,
-  AddCircleOutline,
-  Biotech,
   InfoOutlined,
 } from "@mui/icons-material";
 import {
@@ -15,7 +11,6 @@ import {
   Divider,
   useTheme,
   IconButton,
-  Button,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import WidgetWrapper from "../WidgetWrapper";
@@ -45,8 +40,28 @@ const UserWidget = ({ userId, picturePath,name,city,country ,bio,telegram,twitte
   const dark = palette.neutral.dark;
   const medium = palette.neutral.medium;
   const main = palette.neutral.main;
-  const user = useSelector((state: RootState) => state.user.user);
+  const [NbFollows, setNbFollows] = useState(0);
+  const { connectedAccount } = useSelector(
+    (state: RootState) => state.account
+  );
 
+  // Check if the current user is viewing their own profile
+  const isOwnProfile = connectedAccount?.address === userId;
+
+  useEffect(() => {
+    const fetchNBFollowers = async () => {
+      if (userId && connectedAccount) {
+        try {
+          const nbr = await getFollowersNBR(connectedAccount,userId);
+          setNbFollows(Number(nbr));
+        } catch (error) {
+          console.error("Failed to fetch user profile:", error);
+          // Optionally redirect to profile setup if profile is missing.
+        }
+      }
+    };
+    fetchNBFollowers();
+    }, [userId,connectedAccount]);
   const userMock = {
     firstName: "Farouk",
     lastName: "Allani",
@@ -60,9 +75,6 @@ const UserWidget = ({ userId, picturePath,name,city,country ,bio,telegram,twitte
   if (!userMock) {
     return null;
   }
-
-  const { location, occupation, viewedProfile, impressions, friends } =
-    userMock;
 
   return (
     <WidgetWrapper>
@@ -87,12 +99,14 @@ const UserWidget = ({ userId, picturePath,name,city,country ,bio,telegram,twitte
             {/* <Typography color={medium}>{friends.length} friends</Typography> */}
           </Box>
         </FlexBetween>
-        {/* <IconButton
-          onClick={() => navigate(`/update-profile`)}
-          sx={{ cursor: "pointer" }}
-        >
-          <ManageAccountsOutlined />
-        </IconButton> */}
+        {isOwnProfile && (
+          <IconButton
+            onClick={() => navigate(`/update-profile`)}
+            sx={{ cursor: "pointer" }}
+          >
+            <EditOutlined />
+          </IconButton>
+        )}
       </FlexBetween>
 
       <Divider />

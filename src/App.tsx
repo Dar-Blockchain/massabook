@@ -26,7 +26,7 @@ import LearnMorePage from "./components/LearnMorePage";
 import UpdateProfilePage from "./components/UpdateProfile";
 
 function App() {
-  const mode = useSelector((state: RootState) => state.user.mode);
+  const mode = useSelector((state: RootState) => state.user?.mode);
   const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
   const dispatch = useDispatch<AppDispatch>();
   const { currentWallet, connectedAccount } = useSelector(

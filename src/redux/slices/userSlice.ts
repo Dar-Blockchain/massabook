@@ -62,21 +62,24 @@ export class Profile implements Serializable<Profile> {
 
 export class Post implements Serializable<Post> {
   constructor(
-    public id: bigint = 0n,
-    public author: string = "",
+    public id: bigint = 0n, // Use bigint to handle u64 values in JavaScript
+    public author: string = '', // Address serialized as string
     public authorName: string = '',
     public authorAvatar: string = '',
-    public text: string = "",
-    public image: string = "",
+    public text: string = '',
+    public image: string = '',
     public isRepost: boolean = false,
-    public repostedPostId: bigint = 0n,
-    public createdAt: bigint = 0n
+    public repostedPostId: bigint = 0n, // Use bigint for u64 values
+    public createdAt: bigint = 0n, // Use bigint for timestamp
+    public likesNbr: bigint = 0n, // Use bigint for u64 values
+    public commentNbr: bigint = 0n, // Use bigint for u64 values
   ) {}
 
+  // Serialize the Post object for sending to the backend
   serialize(): Uint8Array {
-    return new Args()
+    const args = new Args()
       .addU64(this.id)
-      .addString(this.author) // Serialize the author's profile
+      .addString(this.author) // Author as a string
       .addString(this.authorName)
       .addString(this.authorAvatar)
       .addString(this.text)
@@ -84,20 +87,27 @@ export class Post implements Serializable<Post> {
       .addBool(this.isRepost)
       .addU64(this.repostedPostId)
       .addU64(this.createdAt)
-      .serialize();
+      .addU64(this.likesNbr)
+      .addU64(this.commentNbr);
+
+    return new Uint8Array(args.serialize());
   }
 
+  // Deserialize the data received from the backend
   deserialize(data: Uint8Array, offset: number): DeserializedResult<Post> {
     const args = new Args(data, offset);
-    this.id = args.nextU64();
-    this.author = args.nextString();
-    this.authorName = args.nextString();
-    this.authorAvatar = args.nextString();
-    this.text = args.nextString();
-    this.image = args.nextString();
-    this.isRepost = args.nextBool();
-    this.repostedPostId = args.nextU64();
-    this.createdAt = args.nextU64();
+
+    this.id = args.nextU64(); // Deserialize id as bigint
+    this.author = args.nextString(); // Deserialize author
+    this.authorName = args.nextString(); // Deserialize authorName
+    this.authorAvatar = args.nextString(); // Deserialize authorAvatar
+    this.text = args.nextString(); // Deserialize text
+    this.image = args.nextString(); // Deserialize image
+    this.isRepost = args.nextBool(); // Deserialize isRepost
+    this.repostedPostId = args.nextU64(); // Deserialize repostedPostId as bigint
+    this.createdAt = args.nextU64(); // Deserialize createdAt as bigint
+    this.likesNbr = args.nextU64(); // Deserialize likesNbr as bigint
+    this.commentNbr = args.nextU64(); // Deserialize commentNbr as bigint
 
     return { instance: this, offset: args.getOffset() };
   }
@@ -422,37 +432,47 @@ export const updateProfile = createAsyncThunk<
   }
 
   try {
+    console.log('Updating profile on blockchain...');
+    
     // Create an instance of the user's personal contract.
     const userContract = new SmartContract(
       connectedAccount,
       userContractAddress
     );
 
-    // Build the serialized arguments using the updated Profile data.
-    // This assumes your Profile class implements the Serializable interface.
-    const args = new Args().addSerializable(profileData).serialize();
+    // Create a Profile object with updated information (following testUpdateProfile pattern)
+    const updatedProfile = new Profile(
+      profileData.address,
+      profileData.firstName,
+      profileData.lastName,
+      profileData.avatar,
+      profileData.bio,
+      profileData.country,
+      profileData.city,
+      profileData.telegram,
+      profileData.xHandle
+    );
 
-    // Call the on-chain updateProfile function.
-    // (Here, we attach 0 coins assuming the update does not require payment.)
-    const operation = await userContract.call("updateProfile", args, {
-      coins: Mas.fromString("0"),
+    // Build the serialized arguments using the updated Profile data.
+    const args = new Args().addSerializable(updatedProfile);
+
+    // Call the on-chain updateProfile function with 0.1 MAS (following testUpdateProfile pattern)
+    const operation = await userContract.call("updateProfile", args.serialize(), {
+      coins: Mas.fromString("0.1"),
     });
 
-    // Wait until the operation finalizes.
-    const operationStatus = await operation.waitSpeculativeExecution();
-    const speculativeEvents = await operation.getSpeculativeEvents();
-    if (operationStatus === OperationStatus.SpeculativeSuccess) {
-      console.log("User profile updated successfully");
+    // Wait until the operation finalizes (using waitFinalExecution like testUpdateProfile)
+    const operationStatus = await operation.waitFinalExecution();
+    
+    if (operationStatus === OperationStatus.Success) {
+      console.log('Profile updated successfully on blockchain');
+      return profileData;
     } else {
-      console.error("Failed to update user profile:", speculativeEvents);
-      throw new Error("Failed to update user profile");
+      console.error('Update profile operation failed with status:', operationStatus);
+      throw new Error("Failed to update profile on blockchain");
     }
-
-    // If successful, return the updated profile.
-    return profileData;
   } catch (error) {
     console.error("Error updating profile:", error);
-
     throw error;
   }
 });
